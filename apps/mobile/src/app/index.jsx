@@ -34,7 +34,7 @@ export default function SplashIntro() {
     taglineY.value = withDelay(750, withTiming(0, { duration: 450 }));
 
     const timer = setTimeout(() => {
-      router.replace('/(tabs)/home');
+      router.replace('/onboarding');
     }, 2400);
     return () => clearTimeout(timer);
   }, []);
