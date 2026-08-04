@@ -5,47 +5,46 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   withDelay,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/constants/theme';
 
 export default function SplashIntro() {
   const router = useRouter();
 
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.88);
-  const lineWidth = useSharedValue(0);
+  const scale = useSharedValue(0.55);
+  const opacity = useSharedValue(0);
+  const maskWidth = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
-  const taglineY = useSharedValue(10);
+  const taglineY = useSharedValue(8);
 
   useEffect(() => {
-    logoOpacity.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
-    logoScale.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
+    opacity.value = withTiming(1, { duration: 200 });
+    scale.value = withSpring(1, { damping: 8, stiffness: 140, mass: 0.9 });
 
-    lineWidth.value = withDelay(
-      500,
-      withTiming(56, { duration: 450, easing: Easing.out(Easing.cubic) })
+    maskWidth.value = withDelay(
+      120,
+      withTiming(100, { duration: 550, easing: Easing.out(Easing.cubic) })
     );
 
-    taglineOpacity.value = withDelay(750, withTiming(1, { duration: 450 }));
-    taglineY.value = withDelay(750, withTiming(0, { duration: 450 }));
+    taglineOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
+    taglineY.value = withDelay(700, withTiming(0, { duration: 400 }));
 
     const timer = setTimeout(() => {
       router.replace('/onboarding');
-    }, 2400);
+    }, 2200);
     return () => clearTimeout(timer);
   }, []);
 
   const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
   }));
 
-  const lineStyle = useAnimatedStyle(() => ({
-    width: lineWidth.value,
+  const maskStyle = useAnimatedStyle(() => ({
+    width: `${maskWidth.value}%`,
   }));
 
   const taglineStyle = useAnimatedStyle(() => ({
@@ -54,35 +53,42 @@ export default function SplashIntro() {
   }));
 
   return (
-    <LinearGradient colors={[colors.bg, '#F6E6D4']} style={styles.container}>
-      <Animated.Text style={[styles.logo, logoStyle]}>Beyownd</Animated.Text>
-      <Animated.View style={[styles.accentLine, lineStyle]} />
+    <View style={styles.container}>
+      <Animated.View style={logoStyle}>
+        <View style={styles.maskWrap}>
+          <Animated.View style={[styles.maskReveal, maskStyle]}>
+            <Text style={styles.logo}>Beyownd</Text>
+          </Animated.View>
+        </View>
+      </Animated.View>
+
       <Animated.Text style={[styles.tagline, taglineStyle]}>
-        Real work. Real readiness.
+        REAL WORK. REAL READINESS.
       </Animated.Text>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logo: {
-    fontFamily: fonts.display,
-    fontSize: 42,
-    color: colors.textPrimary,
-    letterSpacing: 0.3,
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg,
   },
-  accentLine: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.accent,
-    marginTop: 14,
+  maskWrap: { overflow: 'hidden' },
+  maskReveal: { overflow: 'hidden' },
+  logo: {
+    fontFamily: fonts.displayHeavy,
+    fontSize: 56,
+    color: colors.textPrimary,
+    letterSpacing: -1.2,
   },
   tagline: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 13,
+    fontSize: 11,
     color: colors.textMuted,
-    marginTop: 12,
-    letterSpacing: 0.5,
+    marginTop: 16,
+    letterSpacing: 2.5,
   },
 });

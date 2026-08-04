@@ -1,113 +1,128 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import AuthInput from '@/components/ui/AuthInput';
-import AuthButton from '@/components/ui/AuthButton';
-import AuthBadge from '@/components/ui/AuthBadge';
-import { colors, fonts } from '@/constants/theme';
+import React, { useState } from "react";
+import { Text, Pressable, View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+
+import AuthScreenLayout from "@/components/ui/auth/AuthScreenLayout";
+import AuthInput from "@/components/ui/auth/AnimatedInput";
+import PrimaryButton from "@/components/ui/auth/PrimaryButton";
+import GoogleButton from "@/components/ui/auth/GoogleButton";
+import { fonts, colors } from "@/constants/theme";
 
 export default function Signup() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [college, setCollege] = useState('');
 
-  const handleCreateAccount = () => {
-    router.replace('/(tabs)/home');
-  };
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [college, setCollege] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const handleSignup = () => {
+  const nextErrors = {};
+  if (!name.trim()) nextErrors.name = "Name is required";
+  if (!email.trim()) nextErrors.email = "Email or phone is required";
+  if (!password.trim() || password.length < 6)
+    nextErrors.password = "Min 6 characters";
+
+  setErrors(nextErrors);
+  if (Object.keys(nextErrors).length > 0) return;
+
+  router.replace("/Profile-setup");
+};
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-          </Pressable>
+    <AuthScreenLayout
+      image={require("@/assets/image/onboarding.png")}
+      title="Create account"
+      subtitle="Start your journey with Beyownd"
+      footer={
+  <View style={styles.footerRow}>
+    <Text style={styles.footerText}>Already have an account? </Text>
+    <Text style={styles.footerLink} onPress={() => router.replace("/login")}>
+      Log in
+    </Text>
+  </View>
+}
+    >
+      <AuthInput
+        icon="person-outline"
+        label="Full name"
+        value={name}
+        onChangeText={setName}
+        error={errors.name}
+      />
 
-          <View style={styles.centerBlock}>
-            <AuthBadge icon="rocket-outline" />
+      <AuthInput
+        icon="mail-outline"
+        label="Email or phone number"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        error={errors.email}
+      />
 
-            <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>Start your journey with Beyownd</Text>
+      <AuthInput
+        icon="lock-closed-outline"
+        label="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+        error={errors.password}
+      />
 
-            <View style={styles.form}>
-              <AuthInput
-                icon="person-outline"
-                placeholder="Full name"
-                value={name}
-                onChangeText={setName}
-              />
-              <AuthInput
-                icon="mail-outline"
-                placeholder="Email or phone number"
-                value={emailOrPhone}
-                onChangeText={setEmailOrPhone}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <AuthInput
-                icon="lock-closed-outline"
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <AuthInput
-                icon="school-outline"
-                placeholder="College (optional)"
-                value={college}
-                onChangeText={setCollege}
-              />
+      <AuthInput
+        icon="school-outline"
+        label="College (optional)"
+        value={college}
+        onChangeText={setCollege}
+      />
 
-              <AuthButton label="Create account" onPress={handleCreateAccount} />
+      <PrimaryButton label="Create account" onPress={handleSignup} />
 
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Already have an account? </Text>
-                <Pressable onPress={() => router.replace('/login')}>
-                  <Text style={styles.footerLink}>Log in</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>OR</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <GoogleButton onPress={() => {}} />
+    </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
-  backButton: { marginBottom: 8 },
-  centerBlock: { flex: 1, justifyContent: 'center' },
-  title: { fontFamily: fonts.display, fontSize: 24, color: colors.textPrimary },
-  subtitle: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 4,
-    marginBottom: 28,
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
-  form: {},
-  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 18 },
-  footerText: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
-  footerLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accent },
+  footerText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  footerLink: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    color: colors.accent,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 22,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  dividerText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
 });

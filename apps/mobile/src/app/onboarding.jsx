@@ -1,87 +1,213 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import PagerView from 'react-native-pager-view';
-import { useRouter } from 'expo-router';
-import OnboardingSlide from '@/components/ui/OnboardingSlide';
-import { onboardingSlides } from '@/constants/onboarding-data';
-import { colors, fonts } from '@/constants/theme';
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+
+import HeroIllustration from "@/components/ui/onboarding/HeroIllustration";
+import GradientGlow from "@/components/ui/onboarding/GradientGlow";
+
+import { colors, fonts } from "@/constants/theme";
 
 export default function Onboarding() {
   const router = useRouter();
-  const pagerRef = useRef(null);
-  const [page, setPage] = useState(0);
 
-  const isLast = page === onboardingSlides.length - 1;
+  const fade = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(35)).current;
+  const scale = useRef(new Animated.Value(0.92)).current;
 
-  const goNext = () => {
-    if (isLast) router.replace('/signup');
-    else pagerRef.current?.setPage(page + 1);
-  };
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
 
-  const skip = () => router.replace('/signup');
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+
+      Animated.spring(translateY, {
+        toValue: 0,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {!isLast && (
-        <Pressable style={styles.skipButton} onPress={skip} hitSlop={12}>
-          <Text style={styles.skipText}>Skip</Text>
-        </Pressable>
-      )}
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
 
-      <PagerView
-        ref={pagerRef}
-        style={styles.pager}
-        initialPage={0}
-        onPageSelected={(e) => setPage(e.nativeEvent.position)}
+      <GradientGlow />
+
+      {/* Logo */}
+
+      <Animated.Text
+        style={[
+          styles.logo,
+          {
+            opacity: fade,
+          },
+        ]}
       >
-        {onboardingSlides.map((slide) => (
-          <View key={slide.id} style={{ flex: 1 }}>
-            <OnboardingSlide slide={slide} />
-          </View>
-        ))}
-      </PagerView>
+        Bey
+        <Text style={{ color: colors.accent }}>ownd</Text>
+      </Animated.Text>
 
-      <View style={styles.bottomRow}>
-        <View style={styles.dots}>
-          {onboardingSlides.map((slide, i) => (
-            <View key={slide.id} style={[styles.dot, i === page && styles.dotActive]} />
-          ))}
-        </View>
-        <Pressable style={styles.nextButton} onPress={goNext}>
-          <Text style={styles.nextButtonText}>{isLast ? 'Get Started' : 'Next'}</Text>
-          {!isLast && <Text style={styles.arrow}>→</Text>}
-        </Pressable>
-      </View>
+      {/* Hero */}
+
+      <Animated.View
+        style={{
+          opacity: fade,
+          transform: [{ scale }],
+        }}
+      >
+        <HeroIllustration />
+      </Animated.View>
+
+      {/* Text */}
+
+      <Animated.View
+        style={{
+          opacity: fade,
+          transform: [{ translateY }],
+        }}
+      >
+        <Text style={styles.title}>
+          Stop{" "}
+          <Text style={styles.orange}>
+            consuming.
+          </Text>
+          {"\n"}
+          Start{" "}
+          <Text style={styles.orange}>
+            building.
+          </Text>
+        </Text>
+
+      </Animated.View>
+
+      <View style={{ flex: 1 }} />
+
+      {/* CTA */}
+
+      <Pressable
+        android_ripple={{
+          color: "#3d2b22",
+        }}
+        style={styles.button}
+        onPress={() => router.replace("/signup")}
+      >
+        <Text style={styles.buttonText}>
+          Start My Journey →
+        </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.replace("/login")}
+      >
+        <Text style={styles.signin}>
+          Already have an account?
+          <Text style={styles.signAccent}>
+            {" "}
+            Sign In
+          </Text>
+        </Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  skipButton: { position: 'absolute', top: 12, right: 20, zIndex: 10 },
-  skipText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.textMuted, paddingTop: 30 },
-  pager: { flex: 1 },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
     paddingHorizontal: 28,
-    paddingBottom: 24,
-    paddingTop: 12,
   },
-  dots: { flexDirection: 'row', gap: 6 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.divider },
-  dotActive: { width: 20, backgroundColor: colors.accent },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.textPrimary,
-    paddingHorizontal: 22,
-    paddingVertical: 13,
-    borderRadius: 999,
+
+  logo: {
+    marginTop: 14,
+    fontSize: 28,
+    color: colors.textPrimary,
+    fontFamily: fonts.headingBold,
   },
-  nextButtonText: { fontFamily: fonts.bodyMedium, fontSize: 14, color: '#FFFFFF' },
-  arrow: { color: '#FFFFFF', fontSize: 15 },
+
+  title: {
+    marginTop: 25,
+    fontSize: 42,
+    lineHeight: 48,
+    color: colors.textPrimary,
+    fontFamily: fonts.headingBold,
+  },
+
+  orange: {
+    color: colors.accent,
+  },
+
+  subtitle: {
+    marginTop: 18,
+    fontSize: 17,
+    lineHeight: 29,
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
+  },
+
+  button: {
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: "#241914",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#000",
+
+    shadowOpacity: 0.12,
+
+    shadowRadius: 20,
+
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+
+    elevation: 10,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontSize: 17,
+    fontFamily: fonts.bodyMedium,
+  },
+
+  signin: {
+    marginTop: 20,
+    marginBottom: 25,
+
+    textAlign: "center",
+
+    color: colors.textMuted,
+
+    fontFamily: fonts.bodyMedium,
+
+    fontSize: 15,
+  },
+
+  signAccent: {
+    color: colors.accent,
+  },
 });

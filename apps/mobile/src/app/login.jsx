@@ -1,105 +1,122 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import AuthInput from '@/components/ui/AuthInput';
-import AuthButton from '@/components/ui/AuthButton';
-import AuthBadge from '@/components/ui/AuthBadge';
-import { colors, fonts } from '@/constants/theme';
+import React, { useState } from "react";
+import { Text, Pressable, View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+
+import AuthScreenLayout from "@/components/ui/auth/AuthScreenLayout";
+import AuthInput from "@/components/ui/auth/AnimatedInput";
+import AuthButton from "@/components/ui/auth/PrimaryButton";
+import GoogleButton from "@/components/ui/auth/GoogleButton";
+import { colors, fonts } from "@/constants/theme";
 
 export default function Login() {
   const router = useRouter();
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [password, setPassword] = useState('');
+
+  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
 
   const handleLogin = () => {
-    router.replace('/(tabs)/home');
+    const nextErrors = {};
+    if (!emailOrPhone.trim()) nextErrors.emailOrPhone = "This field is required";
+    if (!password.trim()) nextErrors.password = "Password is required";
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    router.replace("/Profile-setup");
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-          </Pressable>
+    <AuthScreenLayout
+      image={require("@/assets/image/onboarding.png")}
+      title="Welcome back!"
+      subtitle="Let's continue your journey"
+      footer={
+  <View style={styles.footerRow}>
+    <Text style={styles.footerText}>Don't have an account? </Text>
+    <Text style={styles.footerLink} onPress={() => router.replace("/signup")}>
+      Create one
+    </Text>
+  </View>
+}
+    >
+      <AuthInput
+        icon="mail-outline"
+        label="Email or phone number"
+        value={emailOrPhone}
+        onChangeText={setEmailOrPhone}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        error={errors.emailOrPhone}
+      />
 
-          <View style={styles.centerBlock}>
-            <AuthBadge icon="compass-outline" />
+      <AuthInput
+        icon="lock-closed-outline"
+        label="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        autoCapitalize="none"
+        error={errors.password}
+      />
 
-            <Text style={styles.title}>Welcome back!</Text>
-            <Text style={styles.subtitle}>Let's continue your journey</Text>
+      <Pressable style={styles.forgotWrap} hitSlop={8}>
+        <Text style={styles.forgotText}>Forgot password?</Text>
+      </Pressable>
 
-            <View style={styles.form}>
-              <AuthInput
-                icon="mail-outline"
-                placeholder="Email or phone number"
-                value={emailOrPhone}
-                onChangeText={setEmailOrPhone}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              <AuthInput
-                icon="lock-closed-outline"
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-              />
+      <AuthButton label="Log in" onPress={handleLogin} />
 
-              <Pressable style={styles.forgotWrap}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
-              </Pressable>
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>OR</Text>
+        <View style={styles.dividerLine} />
+      </View>
 
-              <AuthButton label="Log in" onPress={handleLogin} />
-
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Don't have an account? </Text>
-                <Pressable onPress={() => router.replace('/signup')}>
-                  <Text style={styles.footerLink}>Create one</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <GoogleButton onPress={() => {}} />
+    </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 32, flexGrow: 1 },
-  backButton: { marginBottom: 8 },
-  centerBlock: { flex: 1, justifyContent: 'center' },
-  title: { fontFamily: fonts.display, fontSize: 24, color: colors.textPrimary },
-  subtitle: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 4,
-    marginBottom: 28,
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
-  form: {},
-  forgotWrap: { alignItems: 'flex-end', marginBottom: 4 },
-  forgotText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.accent },
-  footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 18 },
-  footerText: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
-  footerLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accent },
+  footerText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  footerLink: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    color: colors.accent,
+  },
+  forgotWrap: {
+    alignItems: "flex-end",
+    marginBottom: 4,
+  },
+  forgotText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    color: colors.accent,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 22,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.divider,
+  },
+  dividerText: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
 });
