@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { View, ScrollView, Text, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  ScrollView,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -14,18 +21,24 @@ const QUESTIONS = [
   {
     key: "year",
     question: "What year are you in?",
-    options: ["1st year", "2nd year", "3rd year", "Final year", "Already graduated"],
+    options: [
+      "1st year",
+      "2nd year",
+      "3rd year",
+      "Final year",
+      "Already graduated",
+    ],
     optional: false,
   },
   {
     key: "field",
     question: "Which field do you want to grow in?",
     options: [
-      "Tech (dev / data)",
+      "Tech (Dev / Data)",
       "Design",
       "Marketing / Sales",
       "Content / Writing",
-      "Government job prep",
+      "Government Job Prep",
       "Not sure yet",
     ],
     optional: false,
@@ -43,7 +56,11 @@ const QUESTIONS = [
   {
     key: "time",
     question: "How much time can you give weekly?",
-    options: ["2-3 hours", "5-7 hours", "10+ hours"],
+    options: [
+      "2-3 hours",
+      "5-7 hours",
+      "10+ hours",
+    ],
     optional: false,
   },
   {
@@ -61,10 +78,18 @@ const QUESTIONS = [
 
 export default function ProfileSetup() {
   const router = useRouter();
-  const [answers, setAnswers] = useState({});
 
-  const requiredQuestions = QUESTIONS.filter((q) => !q.optional);
-  const answeredCount = QUESTIONS.filter((q) => answers[q.key]).length;
+  const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const requiredQuestions = QUESTIONS.filter(
+    (q) => !q.optional
+  );
+
+  const answeredCount = QUESTIONS.filter(
+    (q) => answers[q.key]
+  ).length;
+
   const progress = answeredCount / QUESTIONS.length;
 
   const canContinue = useMemo(
@@ -73,17 +98,46 @@ export default function ProfileSetup() {
   );
 
   const handleSelect = (key, value) => {
-    setAnswers((prev) => ({ ...prev, [key]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
-  const handleContinue = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace("/profile-setup"); // TODO: change to actual home route once ready
+  const handleContinue = async () => {
+    if (!canContinue || loading) return;
+
+    setLoading(true);
+
+    await Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
+
+    // Premium UX delay
+    await new Promise((resolve) =>
+      setTimeout(resolve, 500)
+    );
+
+    // TODO:
+    // Save answers to backend
+    // await saveProfile(answers);
+
+    router.replace("/WorkspaceSetupScreen");
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <SafeAreaView
+      style={styles.container}
+      edges={["top", "bottom"]}
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : undefined
+        }
+      >
         <View style={styles.headerFixed}>
           <ProgressBar progress={progress} />
         </View>
@@ -93,10 +147,18 @@ export default function ProfileSetup() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeIn.duration(400)} style={styles.hero}>
-            <Text style={styles.title}>Let's get to know you</Text>
+          <Animated.View
+            entering={FadeIn.duration(450)}
+            style={styles.hero}
+          >
+            <Text style={styles.title}>
+              Let's get to know you
+            </Text>
+
             <Text style={styles.subtitle}>
-              This helps us set the right tasks and roadmap for you
+              This helps us personalize your
+              Reality Tasks, Notes, and learning
+              roadmap.
             </Text>
           </Animated.View>
 
@@ -108,13 +170,24 @@ export default function ProfileSetup() {
               optional={q.optional}
               options={q.options}
               selected={answers[q.key]}
-              onSelect={(value) => handleSelect(q.key, value)}
+              onSelect={(value) =>
+                handleSelect(q.key, value)
+              }
             />
           ))}
         </ScrollView>
 
         <View style={styles.footer}>
-          <AuthButton label="Continue" onPress={handleContinue} disabled={!canContinue} />
+          <AuthButton
+            label={
+              loading
+                ? "Setting up your workspace..."
+                : "Continue"
+            }
+            loading={loading}
+            disabled={!canContinue || loading}
+            onPress={handleContinue}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -122,27 +195,44 @@ export default function ProfileSetup() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  headerFixed: { paddingHorizontal: 24, paddingTop: 12 },
-  scroll: { paddingHorizontal: 24, paddingBottom: 20 },
-  hero: { marginBottom: 28 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
+
+  headerFixed: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+
+  scroll: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+
+  hero: {
+    marginBottom: 28,
+  },
+
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: fonts.headingBold,
     color: colors.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    letterSpacing: -0.6,
+    marginBottom: 10,
   },
+
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 22,
     fontFamily: fonts.body,
     color: colors.textMuted,
-    lineHeight: 20,
   },
+
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 12,
-    paddingTop: 10,
+    paddingTop: 14,
+    paddingBottom: 16,
     backgroundColor: colors.bg,
     borderTopWidth: 1,
     borderTopColor: colors.divider,
