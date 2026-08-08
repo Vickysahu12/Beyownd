@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useHomeTheme } from "@/context/ThemeContext";
 
-export default function HomeHeader({ name, avatar, streak, hasNotification, isDark, onToggleTheme }) {
+export default function HomeHeader({ name, avatar, streak, hasNotification, isDark, onToggleTheme, onNotificationPress }) {
   const { colors, fonts } = useHomeTheme();
 
   const dotOpacity = useSharedValue(1);
@@ -58,6 +58,7 @@ export default function HomeHeader({ name, avatar, streak, hasNotification, isDa
               bellScale.value = withSpring(0.9, {}, () => {
                 bellScale.value = withSpring(1);
               });
+              if (onNotificationPress) onNotificationPress(); // ← Triggering navigation callback
             }}
           >
             <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />

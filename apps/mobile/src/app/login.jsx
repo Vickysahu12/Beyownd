@@ -32,13 +32,16 @@ export default function Login() {
       title="Welcome back!"
       subtitle="Let's continue your journey"
       footer={
-  <View style={styles.footerRow}>
-    <Text style={styles.footerText}>Don't have an account? </Text>
-    <Text style={styles.footerLink} onPress={() => router.replace("/signup")}>
-      Create one
-    </Text>
-  </View>
-}
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text
+            style={styles.footerLink}
+            onPress={() => router.replace("/signup")}
+          >
+            Create one
+          </Text>
+        </View>
+      }
     >
       <AuthInput
         icon="mail-outline"
@@ -60,7 +63,11 @@ export default function Login() {
         error={errors.password}
       />
 
-      <Pressable style={styles.forgotWrap} hitSlop={8}>
+      <Pressable
+        style={styles.forgotWrap}
+        hitSlop={8}
+        onPress={() => router.push("/forgot-password")}
+      >
         <Text style={styles.forgotText}>Forgot password?</Text>
       </Pressable>
 
@@ -96,7 +103,7 @@ const styles = StyleSheet.create({
   },
   forgotWrap: {
     alignItems: "flex-end",
-    marginBottom: 4,
+    marginBottom: 12,
   },
   forgotText: {
     fontFamily: fonts.bodyMedium,

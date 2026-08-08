@@ -14,7 +14,7 @@ import { fonts } from "@/constants/theme";
 
 const TABS = [
   { name: "home", label: "Home", icon: "home", iconOutline: "home-outline" },
-  { name: "practice", label: "Practice", icon: "flag", iconOutline: "flag-outline" },
+  { name: "notes", label: "Notes", icon: "flag", iconOutline: "flag-outline" },
   { name: "tasks", label: "Tasks", icon: "checkbox", iconOutline: "checkbox-outline" },
   { name: "profile", label: "Profile", icon: "person", iconOutline: "person-outline" },
 ];

@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import NoteCard from "./NoteCard";
 import { useHomeTheme } from "@/context/ThemeContext";
 
-// 'key' ki jagah 'id' use kiya hai
 const NOTES = [
   { id: "html", icon: "code-slash", color: "accent", title: "HTML & CSS Cheatsheet", progress: 80 },
   { id: "js", icon: "logo-javascript", color: "success", title: "JavaScript Fundamentals", progress: 65 },
@@ -13,6 +14,7 @@ const NOTES = [
 
 export default function QuickAccessNotes() {
   const { colors, fonts } = useHomeTheme();
+  const router = useRouter();
 
   return (
     <View>
@@ -20,9 +22,17 @@ export default function QuickAccessNotes() {
         <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
           Quick Access Notes
         </Text>
-        <Text style={[styles.seeAll, { color: colors.textMuted, fontFamily: fonts.bodyMedium }]}>
-          See all
-        </Text>
+        <Pressable
+          hitSlop={10}
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push('/(tabs)/notes');
+          }}
+        >
+          <Text style={[styles.seeAll, { color: colors.textMuted, fontFamily: fonts.bodyMedium }]}>
+            See all
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -37,7 +47,10 @@ export default function QuickAccessNotes() {
             color={note.color}
             title={note.title}
             progress={note.progress}
-            onPress={() => {}}
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push(`/note/${note.id}`);
+            }}
           />
         ))}
       </ScrollView>
@@ -52,10 +65,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 16,
-  },
-  seeAll: {
-    fontSize: 13,
-  },
+  sectionTitle: { fontSize: 16 },
+  seeAll: { fontSize: 13 },
 });

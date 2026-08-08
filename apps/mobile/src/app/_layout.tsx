@@ -4,6 +4,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useFonts as useSora, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { useFonts as useInter, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { colors } from '@/constants/theme';
+import { HomeThemeProvider } from '@/context/ThemeContext';
+
+// Production Utilities
+import OfflineBanner from '@/components/common/OfflineBanner';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,6 +25,16 @@ export default function RootLayout() {
   if (!fontsReady) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+    <ErrorBoundary>
+      <HomeThemeProvider>
+        <OfflineBanner />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        />
+      </HomeThemeProvider>
+    </ErrorBoundary>
   );
 }
