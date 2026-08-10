@@ -10,8 +10,9 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/constants/theme';
+import { useAuthStore } from '@/store/useAuthStore';
 
-export default function SplashIntro() {
+function SplashIndex() {
   const router = useRouter();
 
   const scale = useSharedValue(0.55);
@@ -33,8 +34,17 @@ export default function SplashIntro() {
     taglineY.value = withDelay(700, withTiming(0, { duration: 400 }));
 
     const timer = setTimeout(() => {
-      router.replace('/onboarding');
+      const { isAuthenticated, hasCompletedOnboarding } = useAuthStore.getState();
+
+      if (!hasCompletedOnboarding) {
+        router.replace('/onboarding');
+      } else if (!isAuthenticated) {
+        router.replace('/login');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     }, 2200);
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -92,3 +102,5 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
   },
 });
+
+export default SplashIndex;

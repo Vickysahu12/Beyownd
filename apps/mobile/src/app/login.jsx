@@ -8,14 +8,19 @@ import AuthButton from "@/components/ui/auth/PrimaryButton";
 import GoogleButton from "@/components/ui/auth/GoogleButton";
 import { colors, fonts } from "@/constants/theme";
 
+// Auth Store
+import { useAuthStore } from "@/store/useAuthStore";
+
 export default function Login() {
   const router = useRouter();
+  const login = useAuthStore((state) => state.login);
 
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const nextErrors = {};
     if (!emailOrPhone.trim()) nextErrors.emailOrPhone = "This field is required";
     if (!password.trim()) nextErrors.password = "Password is required";
@@ -23,7 +28,28 @@ export default function Login() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    router.replace("/Profile-setup");
+    setLoading(true);
+
+    try {
+      // TODO: Yaha actual API call karna hai. Abhi ke liye mock data.
+      const mockUserData = {
+        id: "usr_12345",
+        email: emailOrPhone,
+        name: "Aarav",
+      };
+      const mockToken = "mock_jwt_token_abc123";
+
+      // Ye call zaroori hai — isse hi isAuthenticated true hota hai
+      // aur AsyncStorage mein persist hota hai, taaki agli baar app
+      // khulne pe SplashIntro seedha home pe bhej sake.
+      login(mockUserData, mockToken);
+
+      router.replace("/Profile-setup");
+    } catch (err) {
+      console.error("Login failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,7 +97,11 @@ export default function Login() {
         <Text style={styles.forgotText}>Forgot password?</Text>
       </Pressable>
 
-      <AuthButton label="Log in" onPress={handleLogin} />
+      <AuthButton
+        label={loading ? "Logging in..." : "Log in"}
+        onPress={handleLogin}
+        disabled={loading}
+      />
 
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />

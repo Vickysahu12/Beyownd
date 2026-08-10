@@ -16,11 +16,16 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useHomeTheme } from "@/context/ThemeContext";
+// 1. Auth Store import kiya
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, fonts, isDark, toggleTheme } = useHomeTheme();
+
+  // 2. Logout function store se nikala
+  const logout = useAuthStore((state) => state.logout);
 
   // Settings State
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -43,7 +48,12 @@ export default function SettingsScreen() {
         {
           text: "Log Out",
           style: "destructive",
-          onPress: () => router.replace("/login"),
+          onPress: () => {
+            // 3. Pehle store clear (isAuthenticated: false & token wipe)
+            logout();
+            // 4. Login screen par redirect
+            router.replace("/login");
+          },
         },
       ]
     );
@@ -294,7 +304,7 @@ export default function SettingsScreen() {
             iconColor: "#EC4899",
             title: "Help & Support",
             subtitle: "FAQs and contact support",
-            onPress: () => router.push("/help-support"), // ← Connected Help & Support Route
+            onPress: () => router.push("/help-support"),
           })}
           {renderSettingItem({
             icon: "document-text-outline",
@@ -302,7 +312,7 @@ export default function SettingsScreen() {
             iconColor: "#9CA3AF",
             title: "Privacy Policy",
             subtitle: "Data privacy and terms",
-            onPress: () => router.push("/privacy-policy"), // ← Connected Privacy Policy Route
+            onPress: () => router.push("/privacy-policy"),
           })}
         </Animated.View>
 

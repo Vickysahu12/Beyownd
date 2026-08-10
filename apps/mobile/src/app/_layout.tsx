@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts as useSora, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
@@ -6,23 +6,40 @@ import { useFonts as useInter, Inter_400Regular, Inter_500Medium } from '@expo-g
 import { colors } from '@/constants/theme';
 import { HomeThemeProvider } from '@/context/ThemeContext';
 
-// Production Utilities
 import OfflineBanner from '@/components/common/OfflineBanner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { useAuthStore } from '@/store/useAuthStore';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [soraLoaded] = useSora({ Sora_600SemiBold, Sora_700Bold });
   const [interLoaded] = useInter({ Inter_400Regular, Inter_500Medium });
+  const [isStoreHydrated, setIsStoreHydrated] = useState(false);
 
   const fontsReady = soraLoaded && interLoaded;
 
   useEffect(() => {
-    if (fontsReady) SplashScreen.hideAsync();
-  }, [fontsReady]);
+    const unsub = useAuthStore.persist?.onFinishHydration(() => {
+      setIsStoreHydrated(true);
+    });
 
-  if (!fontsReady) return null;
+    if (useAuthStore.persist?.hasHydrated()) {
+      setIsStoreHydrated(true);
+    }
+
+    return () => unsub?.();
+  }, []);
+
+  const isAppReady = fontsReady && isStoreHydrated;
+
+  useEffect(() => {
+    if (isAppReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [isAppReady]);
+
+  if (!isAppReady) return null;
 
   return (
     <ErrorBoundary>
