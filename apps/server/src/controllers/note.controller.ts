@@ -44,4 +44,27 @@ export class NoteController {
       next(error);
     }
   }
+  
+  static async getNoteById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.userId;
+    const id = req.params.id as string;
+    const result = await NoteService.getNoteById(id, userId);
+    res.status(200).json(new ApiResponse(200, result, "Note fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+static async updateProgress(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.userId;
+    const id = req.params.id as string;
+    const { progress } = req.body;
+    const result = await NoteService.updateProgress(id, userId, progress);
+    res.status(200).json(new ApiResponse(200, result, "Progress updated successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
 }

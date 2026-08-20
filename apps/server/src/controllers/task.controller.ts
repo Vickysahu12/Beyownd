@@ -47,4 +47,26 @@ export class TaskController {
       next(error);
     }
   }
+  static async getTaskById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.userId;
+    const id = req.params.id as string;
+    const result = await TaskService.getTaskById(id, userId);
+    res.status(200).json(new ApiResponse(200, result, "Task fetched successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+static async submitTask(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user.userId;
+    const id = req.params.id as string;
+    const { submissionType, submissionUrl, notes } = req.body;
+    const result = await TaskService.submitTask(id, userId, { submissionType, submissionUrl, notes });
+    res.status(200).json(new ApiResponse(200, result, "Task submitted successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
 }

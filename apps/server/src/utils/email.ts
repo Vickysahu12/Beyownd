@@ -1,26 +1,32 @@
 import nodemailer from "nodemailer";
+import { env } from "../config/env";
 
-// Simple Transport Setup (Console log mode in Dev, SMTP in Prod)
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
+  secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS, // 16-character Gmail App Password
   },
 });
 
-export const sendOtpEmail = async (email: string, otp: string) => {
-  // Terminal log for quick testing if SMTP isn't configured yet
-  console.log(`\n========== 📩 OTP FOR ${email}: ${otp} ==========\n`);
+export const sendOtpEmail = async (to: string, otp: string) => {
+  const mailOptions = {
+    from: `"Beyownd Team" <${process.env.SMTP_USER}>`,
+    to,
+    subject: "Your Beyownd Verification Code",
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+        <h2 style="color: #4f46e5;">Welcome to Beyownd! 🚀</h2>
+        <p style="font-size: 16px; color: #374151;">Use the OTP below to verify your email address:</p>
+        <div style="background-color: #e0e7ff; padding: 15px; border-radius: 6px; text-align: center; margin: 20px 0;">
+          <h1 style="color: #4338ca; letter-spacing: 6px; margin: 0; font-size: 32px;">${otp}</h1>
+        </div>
+        <p style="font-size: 14px; color: #6b7280;">This code will expire in 10 minutes.</p>
+      </div>
+    `,
+  };
 
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    await transporter.sendMail({
-      from: `"Beyownd Support" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: "Your Verification Code - Beyownd",
-      html: `<h3>Your OTP Code is: <b>${otp}</b></h3><p>This code will expire in 10 minutes.</p>`,
-    });
-  }
+  return await transporter.sendMail(mailOptions);
 };

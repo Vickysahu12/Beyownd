@@ -1,23 +1,48 @@
 import { UserRepository } from "../repositories/user.repository";
+import { TokenRepository } from "../repositories/token.repository";
 import { hashPassword, comparePassword } from "../utils/hash";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { sendOtpEmail } from "../utils/email";
+import { generateReferralCode } from "../utils/referral";
 import { ApiError } from "../utils/ApiError";
+
+const REFRESH_TOKEN_TTL_DAYS = 30;
+
+function refreshTokenExpiry(): Date {
+  return new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+}
 
 export class AuthService {
   private static generateOtp(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  static async signup(data: { email: string; password: string; name?: string }) {
+  static async signup(data: { email: string; password: string; name?: string; referralCode?: string }) {
     const existingUser = await UserRepository.findByEmail(data.email);
     if (existingUser) {
       throw new ApiError(400, "User with this email already exists");
     }
 
+    let referredBy: string | undefined;
+    if (data.referralCode) {
+      const referrer = await UserRepository.findByReferralCode(data.referralCode);
+      if (referrer) {
+        referredBy = referrer.id;
+      }
+      // Invalid code diya to silently ignore — signup block mat karo
+    }
+
     const passwordHash = await hashPassword(data.password);
     const otp = this.generateOtp();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    let myReferralCode = generateReferralCode(data.name);
+    let attempts = 0;
+    while (await UserRepository.findByReferralCode(myReferralCode)) {
+      myReferralCode = generateReferralCode(data.name);
+      attempts++;
+      if (attempts > 5) break;
+    }
 
     const user = await UserRepository.createUser({
       email: data.email,
@@ -25,9 +50,10 @@ export class AuthService {
       name: data.name,
       otp,
       otpExpiresAt,
+      referralCode: myReferralCode,
+      referredBy,
     });
 
-    // Pass data.email (guaranteed string) to avoid string | null TypeScript error
     await sendOtpEmail(data.email, otp);
 
     return {
@@ -59,12 +85,17 @@ export class AuthService {
     const accessToken = generateAccessToken({ userId: user.id, email: user.email! });
     const refreshToken = generateRefreshToken({ userId: user.id, email: user.email! });
 
+    await TokenRepository.store(user.id, refreshToken, refreshTokenExpiry());
+
     return {
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         isVerified: true,
+        hasCompletedProfileSetup: user.hasCompletedProfileSetup,
+        hasCompletedWorkspaceSetup: user.hasCompletedWorkspaceSetup,
+        referralCode: user.referralCode,
       },
       accessToken,
       refreshToken,
@@ -89,34 +120,48 @@ export class AuthService {
     const accessToken = generateAccessToken({ userId: user.id, email: user.email! });
     const refreshToken = generateRefreshToken({ userId: user.id, email: user.email! });
 
+    await TokenRepository.store(user.id, refreshToken, refreshTokenExpiry());
+
     return {
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         isVerified: user.isVerified,
+        hasCompletedProfileSetup: user.hasCompletedProfileSetup,
+        hasCompletedWorkspaceSetup: user.hasCompletedWorkspaceSetup,
+        referralCode: user.referralCode,
       },
       accessToken,
       refreshToken,
     };
   }
 
-  static async refreshToken(refreshToken: string) {
-    if (!refreshToken) {
+  static async refreshToken(oldRefreshToken: string) {
+    if (!oldRefreshToken) {
       throw new ApiError(400, "Refresh token is required");
     }
 
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = verifyRefreshToken(oldRefreshToken);
+    const storedToken = await TokenRepository.findValid(oldRefreshToken);
+    if (!storedToken) {
+      throw new ApiError(401, "Refresh token is invalid, expired, or has been revoked");
+    }
 
-    const newAccessToken = generateAccessToken({
-      userId: payload.userId,
-      email: payload.email,
-    });
+    await TokenRepository.revoke(oldRefreshToken);
 
-    return { accessToken: newAccessToken };
+    const newAccessToken = generateAccessToken({ userId: payload.userId, email: payload.email });
+    const newRefreshToken = generateRefreshToken({ userId: payload.userId, email: payload.email });
+
+    await TokenRepository.store(payload.userId, newRefreshToken, refreshTokenExpiry());
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
 
-  static async logout() {
+  static async logout(refreshToken: string) {
+    if (refreshToken) {
+      await TokenRepository.revoke(refreshToken);
+    }
     return { message: "Logged out successfully" };
   }
 }

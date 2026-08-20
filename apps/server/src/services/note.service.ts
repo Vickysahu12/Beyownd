@@ -26,4 +26,19 @@ export class NoteService {
 
     return await NoteRepository.deleteNote(noteId, userId);
   }
+
+  static async getNoteById(noteId: string, userId: string) {
+  const note = await NoteRepository.getNoteById(noteId, userId);
+  if (!note) throw new ApiError(404, "Note not found");
+  return note;
+}
+
+static async updateProgress(noteId: string, userId: string, progress: number) {
+  if (progress < 0 || progress > 100) {
+    throw new ApiError(400, "Progress must be between 0 and 100");
+  }
+  const note = await NoteRepository.getNoteById(noteId, userId);
+  if (!note) throw new ApiError(404, "Note not found");
+  return NoteRepository.updateProgress(noteId, userId, progress);
+}
 }

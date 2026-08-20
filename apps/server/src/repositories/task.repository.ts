@@ -1,6 +1,7 @@
 import { db } from "../config/db";
 import { tasks } from "../db/schema/tasks.schema";
-import { eq, and } from "drizzle-orm";
+import { taskSubmissions } from "../db/schema/taskSubmissions.schema";
+import { eq, and, desc } from "drizzle-orm";
 
 export class TaskRepository {
   static async createTask(data: {
@@ -52,4 +53,23 @@ export class TaskRepository {
       .returning();
     return result[0];
   }
+
+  static async createSubmission(data: {
+  taskId: string;
+  userId: string;
+  submissionType: "link" | "text" | "file";
+  submissionUrl?: string;
+  notes?: string;
+}) {
+  const result = await db.insert(taskSubmissions).values(data).returning();
+  return result[0];
+}
+
+static async findSubmissionsByTask(taskId: string, userId: string) {
+  return db
+    .select()
+    .from(taskSubmissions)
+    .where(and(eq(taskSubmissions.taskId, taskId), eq(taskSubmissions.userId, userId)))
+    .orderBy(desc(taskSubmissions.submittedAt));
+}
 }

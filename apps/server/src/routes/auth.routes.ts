@@ -9,6 +9,7 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().optional(),
+  referralCode: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -25,12 +26,15 @@ const verifyOtpSchema = z.object({
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
+const resendOtpSchema = z.object({
+  email: z.string().email("Invalid email format"),
+});
 
+// Routes
 router.post("/signup", validate(signupSchema), AuthController.signup);
+router.post("/verify-otp", validate(verifyOtpSchema), AuthController.verifyOtp); 
 router.post("/login", validate(loginSchema), AuthController.login);
-router.post("/verify-otp", validate(verifyOtpSchema), AuthController.verifyOtp);
 router.post("/refresh", validate(refreshTokenSchema), AuthController.refreshToken);
 router.post("/logout", AuthController.logout);
-
 
 export default router;

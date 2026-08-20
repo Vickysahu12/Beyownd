@@ -40,4 +40,34 @@ export class TaskService {
 
     return await TaskRepository.deleteTask(taskId, userId);
   }
+
+  static async getTaskById(taskId: string, userId: string) {
+  const task = await TaskRepository.getTaskById(taskId, userId);
+  if (!task) {
+    throw new ApiError(404, "Task not found");
+  }
+  const submissions = await TaskRepository.findSubmissionsByTask(taskId, userId);
+  return { ...task, submissions };
+}
+
+static async submitTask(
+  taskId: string,
+  userId: string,
+  payload: { submissionType: "link" | "text" | "file"; submissionUrl?: string; notes?: string }
+) {
+  const task = await TaskRepository.getTaskById(taskId, userId);
+  if (!task) {
+    throw new ApiError(404, "Task not found");
+  }
+  if (task.status === "completed") {
+    throw new ApiError(400, "This task is already completed");
+  }
+
+  const submission = await TaskRepository.createSubmission({ taskId, userId, ...payload });
+  const updatedTask = await TaskRepository.updateTask(taskId, userId, {
+    status: "completed",
+  });
+
+  return { submission, task: updatedTask };
+}
 }

@@ -33,18 +33,22 @@ export class AuthController {
 
   static async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await AuthService.logout();
+      // Ab refreshToken body se le rahe hain aur service ko pass kar rahe
+      // hain, taaki wahi token DB mein revoke ho jaye — pehle ye missing tha.
+      const { refreshToken } = req.body;
+      await AuthService.logout(refreshToken);
       res.status(200).json(new ApiResponse(200, null, "Logged out successfully"));
     } catch (error) {
       next(error);
     }
   }
+
   static async verifyOtp(req: Request, res: Response, next: NextFunction) {
-  try {
-    const result = await AuthService.verifyOtp(req.body);
-    res.status(200).json(new ApiResponse(200, result, "Email verified successfully"));
-  } catch (error) {
-    next(error);
+    try {
+      const result = await AuthService.verifyOtp(req.body);
+      res.status(200).json(new ApiResponse(200, result, "Email verified successfully"));
+    } catch (error) {
+      next(error);
+    }
   }
-}
 }
