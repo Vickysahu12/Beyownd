@@ -16,6 +16,7 @@ import ProgressBar from "@/components/ui/setup/ProgressDots";
 import QuestionBlock from "@/components/ui/setup/QuestionBlock";
 import AuthButton from "@/components/ui/auth/PrimaryButton";
 import { colors, fonts } from "@/constants/theme";
+import { apiClient } from "@/api/client";
 
 const QUESTIONS = [
   {
@@ -32,13 +33,12 @@ const QUESTIONS = [
   },
   {
     key: "field",
-    question: "Which field do you want to grow in?",
+    question: "What do you want to build?",
     options: [
-      "Tech (Dev / Data)",
-      "Design",
-      "Marketing / Sales",
-      "Content / Writing",
-      "Government Job Prep",
+      "Web Dev",
+      "Mobile Dev",
+      "Backend / DevOps",
+      "Data Science / AI",
       "Not sure yet",
     ],
     optional: false,
@@ -118,9 +118,21 @@ export default function ProfileSetup() {
       setTimeout(resolve, 500)
     );
 
-    // TODO:
-    // Save answers to backend
-    // await saveProfile(answers);
+    try {
+      // Frontend ke short keys (year, field, experience, time, goal) ko
+      // backend ke schema field names se map kar rahe hain.
+      await apiClient.put("/users/profile-setup", {
+        currentYear: answers.year,
+        techInterest: answers.field,
+        experienceLevel: answers.experience,
+        weeklyTimeAvailable: answers.time,
+        primaryGoal: answers.goal, // optional, undefined chal jayega agar skip kiya
+      });
+    } catch (err) {
+      console.error("Profile-setup save failed:", err.response?.data || err.message);
+      // Yahan chaho to error toast/alert dikha sakte ho — abhi silently
+      // aage badha rahe hain taaki user flow mein block na ho.
+    }
 
     router.replace("/WorkspaceSetupScreen");
   };

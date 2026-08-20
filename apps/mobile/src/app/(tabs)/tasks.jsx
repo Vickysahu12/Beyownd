@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,45 +6,57 @@ import * as Haptics from 'expo-haptics';
 import { darkColors as colors } from '@/constants/darkTheme';
 import { fonts } from '@/constants/theme';
 import TaskListCard from '@/components/ui/tasks/TaskListCard';
-import { TASKS } from '@/constants/tasks-data';
 import ScreenStateWrapper from '@/components/common/ScreenStateWrapper';
+import { apiClient } from '@/api/client';
+import { formatDifficulty, formatDueLabel } from '@/utils/taskHelpers';
 
 const FILTERS = ['All', 'In Progress', 'Completed'];
 
 export default function Tasks() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('All');
-
-  // --- state pattern, Home jaisa ---
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [hasData, setHasData] = useState(true);
 
-  const fetchTasks = () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     setError(false);
-    setTimeout(() => {
+    try {
+      const { data } = await apiClient.get('/tasks');
+      const mapped = data.data.map((t) => ({
+        id: t.id,
+        title: t.title,
+        difficulty: formatDifficulty(t.difficulty),
+        status: t.status,
+        due: formatDueLabel(t),
+        dueDate: t.dueDate,
+        completedAt: t.completedAt,
+      }));
+      setTasks(mapped);
+    } catch (err) {
+      console.error('Tasks fetch failed:', err.response?.data || err.message);
+      setError(true);
+    } finally {
       setLoading(false);
-      setHasData(true);
-    }, 1500);
-  };
+    }
+  }, []);
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
-  const completedCount = TASKS.filter((t) => t.status === 'completed').length;
-  const progressPercent = Math.round((completedCount / TASKS.length) * 100);
+  const completedCount = tasks.filter((t) => t.status === 'completed').length;
+  const progressPercent = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   const filteredTasks = useMemo(() => {
-    if (activeFilter === 'In Progress') return TASKS.filter((t) => t.status === 'in_progress');
-    if (activeFilter === 'Completed') return TASKS.filter((t) => t.status === 'completed');
-    return TASKS;
-  }, [activeFilter]);
+    if (activeFilter === 'In Progress') return tasks.filter((t) => t.status === 'in_progress');
+    if (activeFilter === 'Completed') return tasks.filter((t) => t.status === 'completed');
+    return tasks;
+  }, [activeFilter, tasks]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* Header hamesha visible */}
       <View style={styles.header}>
         <Text style={[styles.tagline, { color: colors.accent }]}>PROVE YOUR SKILLS</Text>
         <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
@@ -52,11 +64,10 @@ export default function Tasks() {
         </Text>
       </View>
 
-      {/* Content area — progress card + filters + list, sab wrapper ke andar */}
       <ScreenStateWrapper
         loading={loading}
         error={error}
-        isEmpty={!hasData || TASKS.length === 0}
+        isEmpty={!loading && !error && tasks.length === 0}
         onRetry={fetchTasks}
         skeletonCount={4}
         emptyTitle="No tasks yet"
@@ -67,7 +78,7 @@ export default function Tasks() {
             <View style={styles.progressInfo}>
               <Text style={styles.progressLabel}>Level Progress</Text>
               <Text style={styles.progressVal}>
-                {completedCount} of {TASKS.length} Done ({progressPercent}%)
+                {completedCount} of {tasks.length} Done ({progressPercent}%)
               </Text>
             </View>
             <View style={styles.track}>
@@ -116,14 +127,7 @@ const styles = StyleSheet.create({
   tagline: { fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 4 },
   title: { fontSize: 28, letterSpacing: -0.5 },
   subHeader: { paddingHorizontal: 20 },
-  progressCard: {
-    backgroundColor: '#18181B',
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 14,
-    borderWidth: 1,
-    borderColor: '#27272A',
-  },
+  progressCard: { backgroundColor: '#18181B', borderRadius: 16, padding: 14, marginTop: 14, borderWidth: 1, borderColor: '#27272A' },
   progressInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   progressLabel: { color: '#A1A1AA', fontSize: 12, fontWeight: '600' },
   progressVal: { color: '#F4F4F5', fontSize: 12, fontWeight: '700' },

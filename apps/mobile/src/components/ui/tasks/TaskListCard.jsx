@@ -12,6 +12,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const STATUS_CONFIG = {
   completed: { label: 'Completed', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
   in_progress: { label: 'In Progress', color: '#FF5722', bg: 'rgba(255, 87, 34, 0.12)' },
+  pending: { label: 'Open', color: '#60A5FA', bg: 'rgba(96, 165, 250, 0.12)' },
   locked: { label: 'Locked', color: '#71717A', bg: 'rgba(113, 113, 122, 0.12)' },
 };
 

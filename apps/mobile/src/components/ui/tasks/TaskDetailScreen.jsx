@@ -1,25 +1,14 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Image,
-  StatusBar,
-} from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useHomeTheme } from '@/context/ThemeContext';
-import { TASKS } from '@/constants/tasks-data';
-import TaskSubmissionModal from '@/components/modals/TaskSubmissionModal'; // 👈 Isolated Modal Component
+import { apiClient } from '@/api/client';
+import { formatDifficulty, formatDueLabel } from '@/utils/taskHelpers';
+import TaskSubmissionModal from '@/components/modals/TaskSubmissionModal';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,7 +18,39 @@ export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors, fonts, isDark } = useHomeTheme();
 
-  const task = TASKS.find((t) => t.id === id) || TASKS[0];
+  const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const fetchTask = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const { data } = await apiClient.get(`/tasks/${id}`);
+      setTask(data.data);
+    } catch (err) {
+      console.error('Task detail fetch failed:', err.response?.data || err.message);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchTask();
+  }, [fetchTask]);
+
+  if (loading || !task) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+        {/* yahan chaho to Skeleton component laga sakte ho, abhi simple blank */}
+      </SafeAreaView>
+    );
+  }
+
+  const isSubmitted = task.status === 'completed';
+  const latestSubmission = task.submissions?.[0];
 
   const steps = task.challengeSteps || [
     'Define user journey & screen wireframes.',
@@ -38,47 +59,26 @@ export default function TaskDetailScreen() {
   ];
   const skills = task.skills || ['React Native', 'UI UX', 'Mobile Tech'];
 
-  // Screen Level States
-  const [modalVisible, setModalVisible] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(task.status === 'completed');
-  const [submittedData, setSubmittedData] = useState(null);
-
   const buttonScale = useSharedValue(1);
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
+  const animatedButtonStyle = useAnimatedStyle(() => ({ transform: [{ scale: buttonScale.value }] }));
 
   const handleOpenModal = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(true);
   };
 
-  const handleSubmissionSuccess = (data) => {
-    setIsSubmitted(true);
-    setSubmittedData(data);
-  };
-
-  const handleResetDemo = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsSubmitted(false);
-    setSubmittedData(null);
+  const handleSubmissionSuccess = () => {
+    setModalVisible(false);
+    fetchTask(); // fresh data refetch karo — status "completed" ho chuka hoga
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
       <View style={[styles.glowBar, { backgroundColor: colors.accent }]} />
 
-      {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.back();
-          }}
-        >
+        <Pressable style={styles.backButton} onPress={() => { Haptics.selectionAsync(); router.back(); }}>
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
@@ -87,136 +87,80 @@ export default function TaskDetailScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Main Content Area */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 100 },
-        ]}
-      >
-        {/* Meta Row */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}>
         <View style={styles.metaRow}>
           <View style={[styles.idBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.idText, { color: colors.textMuted }]}>{task.id}</Text>
+            <Text style={[styles.idText, { color: colors.textMuted }]}>{task.id.slice(0, 8)}</Text>
           </View>
-
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: isSubmitted ? 'rgba(76, 175, 80, 0.15)' : colors.accentSoft },
-            ]}
-          >
+          <View style={[styles.statusBadge, { backgroundColor: isSubmitted ? 'rgba(76, 175, 80, 0.15)' : colors.accentSoft }]}>
             <View style={[styles.statusDot, { backgroundColor: isSubmitted ? '#4CAF50' : colors.accent }]} />
-            <Text
-              style={[
-                styles.statusText,
-                { color: isSubmitted ? '#4CAF50' : colors.accent, fontFamily: fonts.bodyMedium },
-              ]}
-            >
-              {isSubmitted ? 'Under Review' : task.status === 'in_progress' ? 'In Progress' : 'Open'}
+            <Text style={[styles.statusText, { color: isSubmitted ? '#4CAF50' : colors.accent, fontFamily: fonts.bodyMedium }]}>
+              {isSubmitted ? 'Completed' : task.status === 'in_progress' ? 'In Progress' : 'Open'}
             </Text>
           </View>
         </View>
 
-        <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
-          {task.title}
-        </Text>
+        <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>{task.title}</Text>
 
         <View style={[styles.previewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Image
-            source={{
-              uri:
-                task.image ||
-                'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
-            }}
+            source={{ uri: task.image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80' }}
             style={styles.mockupImage}
             resizeMode="cover"
           />
         </View>
 
-        {/* Description */}
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-            Project Description
-          </Text>
-          <Text style={[styles.bodyText, { color: colors.textMuted, fontFamily: fonts.body }]}>
-            {task.description}
-          </Text>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>Project Description</Text>
+          <Text style={[styles.bodyText, { color: colors.textMuted, fontFamily: fonts.body }]}>{task.description}</Text>
         </View>
 
-        {/* Deliverables */}
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-            Deliverables Required
-          </Text>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>Deliverables Required</Text>
           {steps.map((step, index) => (
             <View key={index} style={styles.stepRow}>
               <View style={[styles.stepNumBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[styles.stepNumber, { color: colors.accent, fontFamily: fonts.bodyMedium }]}>
-                  {index + 1}
-                </Text>
+                <Text style={[styles.stepNumber, { color: colors.accent, fontFamily: fonts.bodyMedium }]}>{index + 1}</Text>
               </View>
-              <Text style={[styles.stepText, { color: colors.textMuted, fontFamily: fonts.body }]}>
-                {step}
-              </Text>
+              <Text style={[styles.stepText, { color: colors.textMuted, fontFamily: fonts.body }]}>{step}</Text>
             </View>
           ))}
         </View>
 
-        {/* Skills */}
         <View style={styles.section}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-            Required Tech Stack
-          </Text>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>Required Tech Stack</Text>
           <View style={styles.skillsWrapper}>
             {skills.map((skill, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.skillBadge,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
+              <View key={index} style={[styles.skillBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="sparkles" size={12} color={colors.accent} />
-                <Text style={[styles.skillText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>
-                  {skill}
-                </Text>
+                <Text style={[styles.skillText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>{skill}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Meta Grid */}
         <View style={styles.metaGrid}>
           <View style={[styles.gridCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.gridLabel, { color: colors.textMuted }]}>DIFFICULTY</Text>
             <Text style={[styles.gridValue, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-              ⚡ {task.difficulty}
+              ⚡ {formatDifficulty(task.difficulty)}
             </Text>
           </View>
-
           <View style={[styles.gridCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.gridLabel, { color: colors.textMuted }]}>EST. TIME</Text>
             <Text style={[styles.gridValue, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-              ⏳ {task.hours}
+              ⏳ {task.estimatedHours || '—'}
             </Text>
           </View>
         </View>
 
-        {/* Submit Action Card */}
         <View style={[styles.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {!isSubmitted ? (
             <>
               <View>
-                <Text style={[styles.actionCardTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-                  Ready to submit?
-                </Text>
-                <Text style={[styles.actionCardDesc, { color: colors.textMuted }]}>
-                  Attach your code repository or documentation link for review.
-                </Text>
+                <Text style={[styles.actionCardTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>Ready to submit?</Text>
+                <Text style={[styles.actionCardDesc, { color: colors.textMuted }]}>Attach your code repository or documentation link for review.</Text>
               </View>
-
               <AnimatedPressable
                 style={[styles.submitTriggerBtn, { backgroundColor: colors.accent }, animatedButtonStyle]}
                 onPress={handleOpenModal}
@@ -224,9 +168,7 @@ export default function TaskDetailScreen() {
                 onPressOut={() => (buttonScale.value = withSpring(1))}
               >
                 <Ionicons name="cloud-upload" size={18} color="#FFFFFF" />
-                <Text style={[styles.submitTriggerText, { fontFamily: fonts.headingBold }]}>
-                  Submit Solution
-                </Text>
+                <Text style={[styles.submitTriggerText, { fontFamily: fonts.headingBold }]}>Submit Solution</Text>
               </AnimatedPressable>
             </>
           ) : (
@@ -234,36 +176,28 @@ export default function TaskDetailScreen() {
               <View style={styles.submittedBox}>
                 <Ionicons name="checkmark-circle" size={26} color="#4CAF50" />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.submittedTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
-                    Submission Under Review
-                  </Text>
+                  <Text style={[styles.submittedTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>Submitted</Text>
                   <Text style={[styles.submittedSub, { color: colors.textMuted }]}>
-                    Link: {submittedData?.url || 'https://github.com/...'}
+                    Link: {latestSubmission?.submissionUrl || '—'}
                   </Text>
                 </View>
               </View>
-
-              <Pressable onPress={handleResetDemo} style={styles.resetBtn}>
-                <Ionicons name="refresh-outline" size={14} color={colors.textMuted} />
-                <Text style={[styles.resetText, { color: colors.textMuted }]}>Reset (Demo Test)</Text>
-              </Pressable>
             </View>
           )}
         </View>
       </ScrollView>
 
-      {/* --- ISOLATED SUBMISSION MODAL COMPONENT --- */}
       <TaskSubmissionModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSubmitSuccess={handleSubmissionSuccess}
+        taskId={task.id}
         colors={colors}
         fonts={fonts}
       />
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   glowBar: { height: 3, width: '100%' },

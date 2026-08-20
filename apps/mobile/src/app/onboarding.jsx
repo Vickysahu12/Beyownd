@@ -14,9 +14,11 @@ import HeroIllustration from "@/components/ui/onboarding/HeroIllustration";
 import GradientGlow from "@/components/ui/onboarding/GradientGlow";
 
 import { colors, fonts } from "@/constants/theme";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Onboarding() {
   const router = useRouter();
+  const setCompletedOnboarding = useAuthStore((state) => state.setCompletedOnboarding);
 
   const fade = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(35)).current;
@@ -44,6 +46,22 @@ export default function Onboarding() {
     ]).start();
   }, []);
 
+  // NOTE: is stage pe user authenticated NAHI hota (signup/login se pehle
+  // hi ye screen aati hai) — isliye ye flag sirf LOCAL rehta hai (AsyncStorage
+  // ke through, zustand persist se). Backend ka hasCompletedOnboarding column
+  // abhi ke liye is screen se sync nahi hoga — agar future mein interest-tags
+  // is screen pe select karwane hain to signup ke baad ek alag sync-step
+  // banana padega, jab token available ho.
+  const handleStart = () => {
+    setCompletedOnboarding(true);
+    router.replace("/signup");
+  };
+
+  const handleSignIn = () => {
+    setCompletedOnboarding(true);
+    router.replace("/login");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -55,7 +73,6 @@ export default function Onboarding() {
       <GradientGlow />
 
       {/* Logo */}
-
       <Animated.Text
         style={[
           styles.logo,
@@ -69,7 +86,6 @@ export default function Onboarding() {
       </Animated.Text>
 
       {/* Hero */}
-
       <Animated.View
         style={{
           opacity: fade,
@@ -80,7 +96,6 @@ export default function Onboarding() {
       </Animated.View>
 
       {/* Text */}
-
       <Animated.View
         style={{
           opacity: fade,
@@ -98,28 +113,24 @@ export default function Onboarding() {
             building.
           </Text>
         </Text>
-
       </Animated.View>
 
       <View style={{ flex: 1 }} />
 
       {/* CTA */}
-
       <Pressable
         android_ripple={{
           color: "#3d2b22",
         }}
         style={styles.button}
-        onPress={() => router.replace("/signup")}
+        onPress={handleStart}
       >
         <Text style={styles.buttonText}>
           Start My Journey →
         </Text>
       </Pressable>
 
-      <Pressable
-        onPress={() => router.replace("/login")}
-      >
+      <Pressable onPress={handleSignIn}>
         <Text style={styles.signin}>
           Already have an account?
           <Text style={styles.signAccent}>
@@ -170,21 +181,15 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 18,
     backgroundColor: "#241914",
-
     justifyContent: "center",
     alignItems: "center",
-
     shadowColor: "#000",
-
     shadowOpacity: 0.12,
-
     shadowRadius: 20,
-
     shadowOffset: {
       width: 0,
       height: 10,
     },
-
     elevation: 10,
   },
 
@@ -197,13 +202,9 @@ const styles = StyleSheet.create({
   signin: {
     marginTop: 20,
     marginBottom: 25,
-
     textAlign: "center",
-
     color: colors.textMuted,
-
     fontFamily: fonts.bodyMedium,
-
     fontSize: 15,
   },
 

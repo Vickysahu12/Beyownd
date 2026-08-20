@@ -6,9 +6,9 @@ export default function TabsLayout() {
   return (
     <HomeThemeProvider>
     <Tabs
-      screenOptions={{ headerShown: false }}
-      tabBar={(props) => <CustomTabBar {...props} />}
-    >
+  screenOptions={() => ({ headerShown: false, sceneStyle: { backgroundColor: '#09090B' } })}
+  tabBar={(props) => <CustomTabBar {...props} />}
+>
       <Tabs.Screen name="home" />
       <Tabs.Screen name="notes" />
       <Tabs.Screen name="tasks" />

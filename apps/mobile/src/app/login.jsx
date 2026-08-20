@@ -8,8 +8,8 @@ import AuthButton from "@/components/ui/auth/PrimaryButton";
 import GoogleButton from "@/components/ui/auth/GoogleButton";
 import { colors, fonts } from "@/constants/theme";
 
-// Auth Store
 import { useAuthStore } from "@/store/useAuthStore";
+import { apiClient } from "@/api/client";
 
 export default function Login() {
   const router = useRouter();
@@ -31,22 +31,28 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // TODO: Yaha actual API call karna hai. Abhi ke liye mock data.
-      const mockUserData = {
-        id: "usr_12345",
+      const { data } = await apiClient.post("/auth/login", {
         email: emailOrPhone,
-        name: "Aarav",
-      };
-      const mockToken = "mock_jwt_token_abc123";
+        password,
+      });
 
-      // Ye call zaroori hai — isse hi isAuthenticated true hota hai
-      // aur AsyncStorage mein persist hota hai, taaki agli baar app
-      // khulne pe SplashIntro seedha home pe bhej sake.
-      login(mockUserData, mockToken);
+      const { user, accessToken, refreshToken } = data.data;
 
-      router.replace("/Profile-setup");
+      login(user, accessToken, refreshToken);
+
+      if (!user.hasCompletedProfileSetup) {
+        router.replace("/Profile-setup");
+      } else if (!user.hasCompletedWorkspaceSetup) {
+        router.replace("/WorkspaceSetupScreen");
+      } else {
+        router.replace("/(tabs)/home");
+      }
     } catch (err) {
-      console.error("Login failed:", err);
+      const message =
+        err.response?.data?.error?.message ||
+        "Login failed. Please check your credentials.";
+      setErrors({ password: message });
+      console.error("Login failed:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -60,10 +66,7 @@ export default function Login() {
       footer={
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Don't have an account? </Text>
-          <Text
-            style={styles.footerLink}
-            onPress={() => router.replace("/signup")}
-          >
+          <Text style={styles.footerLink} onPress={() => router.replace("/signup")}>
             Create one
           </Text>
         </View>
@@ -89,11 +92,7 @@ export default function Login() {
         error={errors.password}
       />
 
-      <Pressable
-        style={styles.forgotWrap}
-        hitSlop={8}
-        onPress={() => router.push("/forgot-password")}
-      >
+      <Pressable style={styles.forgotWrap} hitSlop={8} onPress={() => router.push("/forgot-password")}>
         <Text style={styles.forgotText}>Forgot password?</Text>
       </Pressable>
 
@@ -115,45 +114,12 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  footerText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  footerLink: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    color: colors.accent,
-  },
-  forgotWrap: {
-    alignItems: "flex-end",
-    marginBottom: 12,
-  },
-  forgotText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 12,
-    color: colors.accent,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 22,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.divider,
-  },
-  dividerText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
+  footerRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", flexWrap: "wrap" },
+  footerText: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
+  footerLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accent },
+  forgotWrap: { alignItems: "flex-end", marginBottom: 12 },
+  forgotText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.accent },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 22, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.divider },
+  dividerText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textMuted },
 });

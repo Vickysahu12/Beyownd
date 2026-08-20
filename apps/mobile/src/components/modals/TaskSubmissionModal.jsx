@@ -21,11 +21,13 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { apiClient } from '@/api/client';
 
 export default function TaskSubmissionModal({
   visible,
   onClose,
   onSubmitSuccess,
+  taskId,
   colors,
   fonts,
 }) {
@@ -56,7 +58,7 @@ export default function TaskSubmissionModal({
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!submissionUrl.trim()) {
       setErrorMessage('Please enter your GitHub Repo or Google Doc URL.');
       triggerErrorShake();
@@ -73,15 +75,27 @@ export default function TaskSubmissionModal({
     setStep('submitting');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // 🚀 Simulating API Loader (1.5 Seconds)
-    setTimeout(() => {
+    try {
+      await apiClient.post(`/tasks/${taskId}/submit`, {
+        submissionType: 'link',
+        submissionUrl: submissionUrl.trim(),
+        notes: notes.trim() || undefined,
+      });
+
       setStep('success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       successScale.value = withSpring(1, { damping: 12 });
-      
-      // Notify parent screen
+
       onSubmitSuccess({ url: submissionUrl, notes });
-    }, 1500);
+    } catch (err) {
+      const message =
+        err.response?.data?.error?.message ||
+        'Submission failed. Please check your connection and try again.';
+      console.error('Task submission failed:', err.response?.data || err.message);
+      setErrorMessage(message);
+      setStep('form');
+      triggerErrorShake();
+    }
   };
 
   const handleCloseModal = () => {
@@ -93,12 +107,7 @@ export default function TaskSubmissionModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={handleCloseModal}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCloseModal}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
@@ -108,7 +117,6 @@ export default function TaskSubmissionModal({
             <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
 
-              {/* --- STEP 1: FORM INPUT STATE --- */}
               {step === 'form' && (
                 <>
                   <View style={styles.modalHeader}>
@@ -189,7 +197,6 @@ export default function TaskSubmissionModal({
                 </>
               )}
 
-              {/* --- STEP 2: LOADING STATE --- */}
               {step === 'submitting' && (
                 <View style={styles.centerContainer}>
                   <ActivityIndicator size="large" color={colors.accent} />
@@ -202,21 +209,17 @@ export default function TaskSubmissionModal({
                 </View>
               )}
 
-              {/* --- STEP 3: CELEBRATION / SUCCESS SCREEN --- */}
               {step === 'success' && (
                 <View style={styles.centerContainer}>
                   <Animated.View style={[styles.successBadge, animatedSuccessStyle, { backgroundColor: colors.accentSoft }]}>
                     <Ionicons name="trophy" size={48} color={colors.accent} />
                   </Animated.View>
-
                   <Text style={[styles.successTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
                     Hurray! Task Submitted 🎉
                   </Text>
-
                   <Text style={[styles.successDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>
                     Awesome work! Our engineering team will review your link. You'll receive updates shortly on your profile.
                   </Text>
-
                   <Pressable
                     style={[styles.modalSubmitBtn, { backgroundColor: colors.accent, width: '100%' }]}
                     onPress={handleCloseModal}
@@ -236,81 +239,23 @@ export default function TaskSubmissionModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    padding: 24,
-    paddingBottom: 36,
-    gap: 16,
-  },
-  modalHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 4,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 28, borderTopRightRadius: 28, borderTopWidth: 1, padding: 24, paddingBottom: 36, gap: 16 },
+  modalHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 4 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   modalTitle: { fontSize: 16 },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 77, 77, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 77, 77, 0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255, 77, 77, 0.12)', borderWidth: 1, borderColor: 'rgba(255, 77, 77, 0.4)', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
   errorBannerText: { color: '#FF4D4D', fontSize: 12, flex: 1 },
   inputGroup: { gap: 6 },
   inputLabel: { fontSize: 13 },
-  modalInput: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 13,
-  },
+  modalInput: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, fontSize: 13 },
   textArea: { height: 80, paddingTop: 12 },
-  modalSubmitBtn: {
-    height: 50,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 6,
-  },
+  modalSubmitBtn: { height: 50, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 },
   modalSubmitBtnText: { color: '#FFFFFF', fontSize: 15 },
-
-  // Center Content for Loader & Celebration
-  centerContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    gap: 12,
-  },
+  centerContainer: { alignItems: 'center', paddingVertical: 20, gap: 12 },
   loadingTitle: { fontSize: 16, marginTop: 12 },
   loadingSub: { fontSize: 12, textAlign: 'center', paddingHorizontal: 20 },
-  successBadge: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
+  successBadge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   successTitle: { fontSize: 20, textAlign: 'center' },
   successDesc: { fontSize: 13, textAlign: 'center', lineHeight: 20, paddingHorizontal: 10, marginBottom: 12 },
 });

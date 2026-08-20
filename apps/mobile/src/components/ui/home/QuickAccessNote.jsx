@@ -1,20 +1,24 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import NoteCard from "./NoteCard";
 import { useHomeTheme } from "@/context/ThemeContext";
-
-const NOTES = [
-  { id: "html", icon: "code-slash", color: "accent", title: "HTML & CSS Cheatsheet", progress: 80 },
-  { id: "js", icon: "logo-javascript", color: "success", title: "JavaScript Fundamentals", progress: 65 },
-  { id: "dsa", icon: "git-branch-outline", color: "pro", title: "DSA Patterns Quick Guide", progress: 40 },
-  { id: "uiux", icon: "bulb", color: "accent", title: "UI/UX Design Principles", progress: 70 },
-];
+import { apiClient } from "@/api/client";
 
 export default function QuickAccessNotes() {
   const { colors, fonts } = useHomeTheme();
   const router = useRouter();
+  const [notes, setNotes] = useState([]);
+
+  useEffect(() => {
+    apiClient
+      .get("/notes")
+      .then(({ data }) => setNotes(data.data.slice(0, 6)))
+      .catch((err) => console.error("Quick notes fetch failed:", err.response?.data || err.message));
+  }, []);
+
+  if (notes.length === 0) return null;
 
   return (
     <View>
@@ -35,16 +39,12 @@ export default function QuickAccessNotes() {
         </Pressable>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: 24 }}
-      >
-        {NOTES.map((note) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 24 }}>
+        {notes.map((note) => (
           <NoteCard
             key={note.id}
             icon={note.icon}
-            color={note.color}
+            color="accent"
             title={note.title}
             progress={note.progress}
             onPress={() => {
@@ -59,12 +59,7 @@ export default function QuickAccessNotes() {
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-  },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
   sectionTitle: { fontSize: 16 },
   seeAll: { fontSize: 13 },
 });

@@ -6,23 +6,31 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       hasCompletedOnboarding: false,
 
       // Actions
-      login: (userData, authToken) => {
+      login: (userData, accessToken, refreshToken) => {
         set({
           user: userData,
-          token: authToken,
+          accessToken,
+          refreshToken,
           isAuthenticated: true,
         });
+      },
+
+      // Sirf tokens update karne ke liye (refresh flow ke andar use hoga)
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken });
       },
 
       logout: () => {
         set({
           user: null,
-          token: null,
+          accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
         });
       },
@@ -38,7 +46,7 @@ export const useAuthStore = create(
       },
     }),
     {
-      name: 'auth-storage', // AsyncStorage mein key ka naam
+      name: 'auth-storage',
       storage: createJSONStorage(() => zustandStorage),
     }
   )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, StatusBar } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -9,28 +9,8 @@ import Animated, { FadeInDown, FadeInUp, Layout } from "react-native-reanimated"
 import { HomeThemeProvider, useHomeTheme } from "@/context/ThemeContext";
 import ScreenStateWrapper from "@/components/common/ScreenStateWrapper";
 import NotifCardSkeleton from "../components/notifications/NotifCardSkeleton";
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: "n1", type: "streak", title: "Don't lose your 14-day streak! 🔥",
-    message: "Complete 1 quick concept in Web Dev before midnight to keep your fire alive.",
-    time: "10 mins ago", read: false, icon: "flame", color: "#FF5722", actionText: "Study Now",
-  },
-  {
-    id: "n2", type: "achievement", title: "New Badge Unlocked: Code Ninja ⚡",
-    message: "Congrats! You solved 20 JavaScript tasks this week.",
-    time: "2 hours ago", read: false, icon: "trophy", color: "#EAB308",
-  },
-  {
-    id: "n3", type: "reminder", title: "CSS Grid vs Flexbox Quiz is live",
-    message: "Test your skills in the quick 3-minute interactive challenge.",
-    time: "Yesterday", read: true, icon: "sparkles", color: "#6366F1", actionText: "Take Quiz",
-  },
-  {
-    id: "n4", type: "system", title: "System Update: Dark Mode Improved",
-    message: "We've upgraded contrast ratios and added new spring physics across all screens.",
-    time: "2 days ago", read: true, icon: "shield-checkmark", color: "#10B981",
-  },
-];
+import { apiClient } from "@/api/client";
+import { mapNotification } from "@/utils/NotificationHelper";
 
 const TABS = ["All", "Unread", "Reminders"];
 
@@ -40,32 +20,46 @@ function NotificationContent() {
   const { colors, fonts, isDark } = useHomeTheme();
 
   const [activeTab, setActiveTab] = useState("All");
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-
-  // --- state pattern, Home jaisa ---
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchNotifications = () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     setError(false);
-    setTimeout(() => {
+    try {
+      const { data } = await apiClient.get("/notifications");
+      setNotifications(data.data.map(mapNotification));
+    } catch (err) {
+      console.error("Notifications fetch failed:", err.response?.data || err.message);
+      setError(true);
+    } finally {
       setLoading(false);
-    }, 1500);
-  };
+    }
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await apiClient.patch("/notifications/read-all");
+    } catch (err) {
+      console.error("Mark all read failed:", err.response?.data || err.message);
+    }
   };
 
-  const handleCardPress = (id) => {
+  const handleCardPress = async (id) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    try {
+      await apiClient.patch(`/notifications/${id}/read`);
+    } catch (err) {
+      console.error("Mark read failed:", err.response?.data || err.message);
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -85,14 +79,10 @@ function NotificationContent() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Header — hamesha visible */}
       <View style={[styles.header, { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" }]}>
         <Pressable
           style={[styles.iconBtn, { backgroundColor: colors.surface || "#18181B" }]}
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.back();
-          }}
+          onPress={() => { Haptics.selectionAsync(); router.back(); }}
         >
           <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
@@ -112,7 +102,6 @@ function NotificationContent() {
         )}
       </View>
 
-      {/* Tabs — hamesha visible */}
       <Animated.View entering={FadeInDown.duration(350)} style={styles.tabsWrapper}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab;
@@ -144,7 +133,6 @@ function NotificationContent() {
         })}
       </Animated.View>
 
-      {/* Content — loading/error/empty/data switch yahan hota hai */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
@@ -152,7 +140,7 @@ function NotificationContent() {
         <ScreenStateWrapper
           loading={loading}
           error={error}
-          isEmpty={filteredNotifications.length === 0}
+          isEmpty={!loading && !error && filteredNotifications.length === 0}
           onRetry={fetchNotifications}
           skeletonCount={4}
           renderSkeleton={() => <NotifCardSkeleton />}
@@ -161,11 +149,7 @@ function NotificationContent() {
           emptyIcon="notifications-off-outline"
         >
           {filteredNotifications.map((item, idx) => (
-            <Animated.View
-              key={item.id}
-              entering={FadeInUp.delay(80 * idx).duration(350)}
-              layout={Layout.springify()}
-            >
+            <Animated.View key={item.id} entering={FadeInUp.delay(80 * idx).duration(350)} layout={Layout.springify()}>
               <Pressable
                 style={[
                   styles.notifCard,
@@ -183,12 +167,7 @@ function NotificationContent() {
                   </View>
                   <View style={styles.contentGroup}>
                     <View style={styles.cardHeaderRow}>
-                      <Text
-                        style={[
-                          styles.notifTitle,
-                          { color: colors.textPrimary, fontFamily: item.read ? fonts.headingSemi : fonts.headingBold },
-                        ]}
-                      >
+                      <Text style={[styles.notifTitle, { color: colors.textPrimary, fontFamily: item.read ? fonts.headingSemi : fonts.headingBold }]}>
                         {item.title}
                       </Text>
                       <Text style={[styles.timeText, { color: colors.textMuted, fontFamily: fonts.body }]}>
@@ -198,17 +177,6 @@ function NotificationContent() {
                     <Text style={[styles.notifMessage, { color: colors.textMuted, fontFamily: fonts.body }]}>
                       {item.message}
                     </Text>
-                    {item.actionText && (
-                      <Pressable
-                        style={[styles.inlineActionBtn, { backgroundColor: item.color }]}
-                        onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
-                      >
-                        <Text style={[styles.inlineActionText, { fontFamily: fonts.headingBold }]}>
-                          {item.actionText}
-                        </Text>
-                        <Ionicons name="arrow-forward" size={12} color="#FFF" />
-                      </Pressable>
-                    )}
                   </View>
                 </View>
               </Pressable>
@@ -227,6 +195,7 @@ export default function NotificationScreen() {
     </HomeThemeProvider>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

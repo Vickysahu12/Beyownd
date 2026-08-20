@@ -45,12 +45,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <HomeThemeProvider>
         <OfflineBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#09090B' } }} />
       </HomeThemeProvider>
     </ErrorBoundary>
   );

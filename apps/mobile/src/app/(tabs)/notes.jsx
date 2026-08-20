@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { View, Text, Pressable, StyleSheet, TextInput, SectionList } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,17 +11,9 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useHomeTheme } from "@/context/ThemeContext";
+import { apiClient } from "@/api/client";
 import ScreenStateWrapper from "@/components/common/ScreenStateWrapper";
-
-const RAW_NOTES = [
-  { id: "html", icon: "code-slash", title: "HTML & CSS Cheatsheet", track: "Web Development", progress: 80 },
-  { id: "js", icon: "logo-javascript", title: "JavaScript Fundamentals", track: "Web Development", progress: 65 },
-  { id: "react", icon: "logo-react", title: "React Basics You Must Know", track: "Web Development", progress: 30 },
-  { id: "dsa", icon: "git-branch-outline", title: "DSA Patterns Quick Guide", track: "Web Development", progress: 40 },
-  { id: "uiux", icon: "bulb-outline", title: "UI/UX Design Principles", track: "Design", progress: 70 },
-  { id: "figma", icon: "color-palette-outline", title: "Figma Shortcuts & Workflow", track: "Design", progress: 20 },
-  { id: "seo", icon: "trending-up-outline", title: "SEO Basics for Beginners", track: "Marketing", progress: 55 },
-];
+import NoteRowSkeleton from "@/components/ui/notes/NoteRowSkeleton";
 
 const TRACK_ACCENT = { "Web Development": "accent", Design: "pro", Marketing: "success" };
 
@@ -50,7 +42,7 @@ function NoteRow({ item, isFirst, isLast, tint, colors, fonts, onPress }) {
     >
       <View style={styles.rowLeft}>
         <View style={[styles.iconBox, { backgroundColor: tint + "18" }]}>
-          <Ionicons name={item.icon} size={18} color={tint} />
+          <Ionicons name={item.icon || "document-text-outline"} size={18} color={tint} />
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.rowTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]} numberOfLines={1}>
@@ -58,10 +50,10 @@ function NoteRow({ item, isFirst, isLast, tint, colors, fonts, onPress }) {
           </Text>
           <View style={styles.progressWrap}>
             <View style={[styles.trackBg, { backgroundColor: "rgba(255,255,255,0.08)" }]}>
-              <View style={[styles.trackFill, { width: `${item.progress}%`, backgroundColor: tint }]} />
+              <View style={[styles.trackFill, { width: `${item.progress || 0}%`, backgroundColor: tint }]} />
             </View>
             <Text style={[styles.progressVal, { color: colors.textMuted, fontFamily: fonts.bodyMedium }]}>
-              {item.progress}%
+              {item.progress || 0}%
             </Text>
           </View>
         </View>
@@ -78,45 +70,49 @@ export default function NotesScreen() {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
 
-  // --- state pattern, Home jaisa ---
+  const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [hasData, setHasData] = useState(true);
 
-  const fetchNotes = () => {
+  const fetchNotes = useCallback(async () => {
     setLoading(true);
     setError(false);
-    setTimeout(() => {
+    try {
+      const { data } = await apiClient.get("/notes");
+      setNotes(data.data);
+    } catch (err) {
+      console.error("Notes fetch failed:", err.response?.data || err.message);
+      setError(true);
+    } finally {
       setLoading(false);
-      setHasData(true);
-    }, 1500);
-  };
+    }
+  }, []);
 
   useEffect(() => {
     fetchNotes();
-  }, []);
+  }, [fetchNotes]);
 
   const sections = useMemo(() => {
-    const filtered = RAW_NOTES.filter(
+    const filtered = notes.filter(
       (n) =>
         n.title.toLowerCase().includes(search.toLowerCase()) ||
-        n.track.toLowerCase().includes(search.toLowerCase())
+        (n.track || "").toLowerCase().includes(search.toLowerCase())
     );
     const map = {};
     const order = [];
     filtered.forEach((n) => {
-      if (!map[n.track]) {
-        map[n.track] = [];
-        order.push(n.track);
+      const trackName = n.track || "General";
+      if (!map[trackName]) {
+        map[trackName] = [];
+        order.push(trackName);
       }
-      map[n.track].push(n);
+      map[trackName].push(n);
     });
     return order.map((track) => ({ title: track, data: map[track] }));
-  }, [search]);
+  }, [search, notes]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
-      {/* Header hamesha visible — Home ke sticky header jaisa */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={[styles.largeTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
@@ -144,15 +140,15 @@ export default function NotesScreen() {
         </View>
       </View>
 
-      {/* Content area — loading/error/empty/data switch yahan hota hai */}
       <ScreenStateWrapper
         loading={loading}
         error={error}
-        isEmpty={!hasData || sections.length === 0}
+        isEmpty={!loading && !error && notes.length === 0}
         onRetry={fetchNotes}
         skeletonCount={6}
-        emptyTitle="No notes found"
-        emptySubtitle="Try a different search, or check back soon for new notes."
+        renderSkeleton={() => <NoteRowSkeleton />}
+        emptyTitle="No notes yet"
+        emptySubtitle="Notes for your track are on the way."
       >
         <SectionList
           sections={sections}

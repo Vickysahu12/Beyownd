@@ -8,6 +8,8 @@ import PrimaryButton from "@/components/ui/auth/PrimaryButton";
 import GoogleButton from "@/components/ui/auth/GoogleButton";
 import { fonts, colors } from "@/constants/theme";
 
+import { apiClient } from "@/api/client";
+
 export default function Signup() {
   const router = useRouter();
 
@@ -15,20 +17,49 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [college, setCollege] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
-  const nextErrors = {};
-  if (!name.trim()) nextErrors.name = "Name is required";
-  if (!email.trim()) nextErrors.email = "Email or phone is required";
-  if (!password.trim() || password.length < 6)
-    nextErrors.password = "Min 6 characters";
+  const handleSignup = async () => {
+    const nextErrors = {};
+    if (!name.trim()) nextErrors.name = "Name is required";
+    if (!email.trim()) nextErrors.email = "Email or phone is required";
+    if (!password.trim() || password.length < 6)
+      nextErrors.password = "Min 6 characters";
 
-  setErrors(nextErrors);
-  if (Object.keys(nextErrors).length > 0) return;
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
-  router.replace("/Profile-setup");
-};
+    setLoading(true);
+
+    try {
+      await apiClient.post("/auth/signup", {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        referralCode: referralCode.trim() || undefined,
+      });
+
+      router.push({
+        pathname: "/verify-otp",
+        params: { email: email.trim() },
+      });
+    } catch (err) {
+      const message =
+        err.response?.data?.error?.message ||
+        "Signup failed. Please try again.";
+
+      if (message.toLowerCase().includes("email")) {
+        setErrors({ email: message });
+      } else {
+        setErrors({ password: message });
+      }
+      console.error("Signup failed:", err.response?.data || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthScreenLayout
@@ -36,13 +67,13 @@ export default function Signup() {
       title="Create account"
       subtitle="Start your journey with Beyownd"
       footer={
-  <View style={styles.footerRow}>
-    <Text style={styles.footerText}>Already have an account? </Text>
-    <Text style={styles.footerLink} onPress={() => router.replace("/login")}>
-      Log in
-    </Text>
-  </View>
-}
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={styles.footerLink} onPress={() => router.replace("/login")}>
+            Log in
+          </Text>
+        </View>
+      }
     >
       <AuthInput
         icon="person-outline"
@@ -79,7 +110,19 @@ export default function Signup() {
         onChangeText={setCollege}
       />
 
-      <PrimaryButton label="Create account" onPress={handleSignup} />
+      <AuthInput
+        icon="gift-outline"
+        label="Referral Code (optional)"
+        value={referralCode}
+        onChangeText={setReferralCode}
+        autoCapitalize="characters"
+      />
+
+      <PrimaryButton
+        label={loading ? "Creating account..." : "Create account"}
+        onPress={handleSignup}
+        disabled={loading}
+      />
 
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />

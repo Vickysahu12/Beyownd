@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -7,50 +7,55 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 
 import { HomeThemeProvider, useHomeTheme } from "@/context/ThemeContext";
+import { useAuthStore } from "@/store/useAuthStore";
+import { apiClient } from "@/api/client";
+
 import HomeHeader from "@/components/ui/home/HomeHeader";
 import ReadinessMeter from "@/components/ui/home/ReadinessMeter";
 import StatsRow from "@/components/ui/home/StatsRow";
 import RealityTaskCard from "@/components/ui/home/RealityTaskCard";
 import QuickAccessNotes from "@/components/ui/home/QuickAccessNote";
-
-// 1. ScreenStateWrapper import kiya
 import ScreenStateWrapper from "@/components/common/ScreenStateWrapper";
 
 function HomeContent() {
   const { colors, isDark, toggleTheme } = useHomeTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
 
-  // 2. States setup ki testing ke liye
+  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [hasData, setHasData] = useState(true);
 
-  // 3. Fake API call (1.5 sec delay to show Skeleton Shimmer)
-  const fetchHomeData = () => {
+  const fetchHomeData = useCallback(async () => {
     setLoading(true);
     setError(false);
-
-    setTimeout(() => {
+    try {
+      const { data } = await apiClient.get("/home");
+      setDashboard(data.data);
+    } catch (err) {
+      console.error("Home fetch failed:", err.response?.data || err.message);
+      setError(true);
+    } finally {
       setLoading(false);
-      setHasData(true);
-    }, 1500);
-  };
+    }
+  }, []);
 
   useEffect(() => {
     fetchHomeData();
-  }, []);
+  }, [fetchHomeData]);
+
+  const firstName = user?.name?.split(" ")[0] || "there";
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Sticky header — ScrollView & StateWrapper ke baahar (Hamesha visible) */}
       <View style={[styles.stickyHeader, { backgroundColor: colors.bg, borderBottomColor: colors.divider }]}>
         <HomeHeader
-          name="Aarav"
+          name={firstName}
           avatar={require("@/assets/image/avatar.png")}
-          streak={12}
+          streak={dashboard?.streak ?? 0}
           hasNotification
           isDark={isDark}
           onToggleTheme={() => {
@@ -68,34 +73,41 @@ function HomeContent() {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 140 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 4. ScreenStateWrapper se content wrap kar diya */}
         <ScreenStateWrapper
           loading={loading}
           error={error}
-          isEmpty={!hasData}
+          isEmpty={false}
           onRetry={fetchHomeData}
           skeletonCount={3}
-          emptyTitle="No Data Found"
-          emptySubtitle="Check back later for updated dashboard stats."
         >
-          <Animated.View entering={FadeInDown.springify().damping(16)}>
-            <ReadinessMeter percent={68} message="You're making strong progress!" weeklyChange={12} />
-            <StatsRow />
-          </Animated.View>
+          {dashboard && (
+            <>
+              <Animated.View entering={FadeInDown.springify().damping(16)}>
+                <ReadinessMeter
+                  percent={dashboard.readiness}
+                  message={dashboard.message}
+                  weeklyChange={dashboard.weeklyChange}
+                />
+                <StatsRow stats={dashboard.stats} />
+              </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(120).springify().damping(16)} style={styles.section}>
-            <RealityTaskCard
-              title="Build a Personal Portfolio Website"
-              description="Create and deploy your own portfolio website to showcase your projects and skills."
-              difficulty="Intermediate"
-              hours="3-4 hrs"
-              onPress={() => router.push("/(tabs)/tasks")}
-            />
-          </Animated.View>
+              {dashboard.featuredTask && (
+                <Animated.View entering={FadeInDown.delay(120).springify().damping(16)} style={styles.section}>
+                  <RealityTaskCard
+                    title={dashboard.featuredTask.title}
+                    description={dashboard.featuredTask.description}
+                    difficulty={dashboard.featuredTask.difficulty}
+                    hours={dashboard.featuredTask.hours}
+                    onPress={() => router.push(`/task/${dashboard.featuredTask.id}`)}
+                  />
+                </Animated.View>
+              )}
 
-          <Animated.View entering={FadeInDown.delay(240).springify().damping(16)} style={styles.section}>
-            <QuickAccessNotes />
-          </Animated.View>
+              <Animated.View entering={FadeInDown.delay(240).springify().damping(16)} style={styles.section}>
+                <QuickAccessNotes />
+              </Animated.View>
+            </>
+          )}
         </ScreenStateWrapper>
       </ScrollView>
     </SafeAreaView>
@@ -112,17 +124,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  stickyHeader: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-  },
-  scroll: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 120,
-    gap: 4,
-  },
+  stickyHeader: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 14, borderBottomWidth: 1 },
+  scroll: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 120, gap: 4 },
   section: { marginTop: 26 },
 });
