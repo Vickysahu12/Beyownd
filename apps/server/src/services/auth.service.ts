@@ -29,7 +29,6 @@ export class AuthService {
       if (referrer) {
         referredBy = referrer.id;
       }
-      // Invalid code diya to silently ignore — signup block mat karo
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -54,7 +53,13 @@ export class AuthService {
       referredBy,
     });
 
-    await sendOtpEmail(data.email, otp);
+    // Safe Try-Catch: Email failure se API crash ya hang nahi hogi
+    try {
+      await sendOtpEmail(data.email, otp);
+    } catch (emailError) {
+      console.error("⚠️ Failed to send OTP email during signup:", emailError);
+      // Silence error here so the user can still proceed to OTP page
+    }
 
     return {
       message: "Registration successful. Please verify the OTP sent to your email.",
