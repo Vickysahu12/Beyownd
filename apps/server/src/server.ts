@@ -1,3 +1,6 @@
+import dns from "node:dns";
+dns.setDefaultResultOrder("ipv4first"); // Fixes IPv6 resolution issues on Render
+
 import app from "./app";
 import { env } from "./config/env";
 

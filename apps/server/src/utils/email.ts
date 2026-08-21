@@ -1,13 +1,13 @@
 import nodemailer from "nodemailer";
-import { env } from "../config/env";
 
+// Port 465 + secure: true Render/Cloud environments ke liye required hai
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, // true for 465, false for 587
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: true, // Port 465 ke saath true (Render par port 587 block hota hai)
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS, // 16-character Gmail App Password
+    pass: process.env.SMTP_PASS, // 16-character App Password
   },
 });
 
@@ -28,5 +28,10 @@ export const sendOtpEmail = async (to: string, otp: string) => {
     `,
   };
 
-  return await transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("❌ Email bhejney mein issue hua:", error);
+    throw new Error("Failed to send OTP email. Please try again.");
+  }
 };
