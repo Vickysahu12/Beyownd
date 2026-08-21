@@ -2,17 +2,15 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --production=false
 
-# Copy source code
 COPY . .
 
-# Build TypeScript code
 RUN npm run build
 
-EXPOSE 5000
+RUN npm prune --production
 
-# Start server
+ENV NODE_ENV=production
+
 CMD ["npm", "start"]
