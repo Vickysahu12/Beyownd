@@ -49,7 +49,7 @@ export default function Login() {
       }
     } catch (err) {
       const message =
-        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
         "Login failed. Please check your credentials.";
       setErrors({ password: message });
       console.error("Login failed:", err.response?.data || err.message);
@@ -92,10 +92,6 @@ export default function Login() {
         error={errors.password}
       />
 
-      <Pressable style={styles.forgotWrap} hitSlop={8} onPress={() => router.push("/forgot-password")}>
-        <Text style={styles.forgotText}>Forgot password?</Text>
-      </Pressable>
-
       <AuthButton
         label={loading ? "Logging in..." : "Log in"}
         onPress={handleLogin}
@@ -117,8 +113,6 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", flexWrap: "wrap" },
   footerText: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
   footerLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accent },
-  forgotWrap: { alignItems: "flex-end", marginBottom: 12 },
-  forgotText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.accent },
   dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 22, gap: 12 },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.divider },
   dividerText: { fontFamily: fonts.bodyMedium, fontSize: 12, color: colors.textMuted },

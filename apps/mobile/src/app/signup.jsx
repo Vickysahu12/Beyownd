@@ -47,7 +47,7 @@ export default function Signup() {
       });
     } catch (err) {
       const message =
-        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
         "Signup failed. Please try again.";
 
       if (message.toLowerCase().includes("email")) {

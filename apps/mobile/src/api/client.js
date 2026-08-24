@@ -1,21 +1,21 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
-// IMPORTANT: Apne laptop ka local IP daal (jaise ipconfig se mila tha).
-// Phone se "localhost" resolve nahi hota — laptop ka LAN IP hi chalega.
-// Jab production mein jayega, isko Render URL se replace karna:
-// e.g. "https://beyownd-api.onrender.com/api/v1"
-const BASE_URL = 'http://10.83.143.220:5000/api/v1';
+// Production backend — Render pe deployed hai, live URL use ho raha hai.
+// Agar kabhi local backend pe test karna ho (jab internet na ho ya
+// backend mein naya change test karna ho jo abhi push nahi hua), to
+// neeche wali line se local IP wapas switch kar sakte ho temporarily.
+const BASE_URL = 'https://beyownd.onrender.com/api/v1';
+// const BASE_URL = 'http://10.83.143.220:5000/api/v1'; // local dev fallback
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// ── Request interceptor: har request mein access token attach karo ──
 apiClient.interceptors.request.use((config) => {
   const { accessToken } = useAuthStore.getState();
   if (accessToken) {
@@ -24,10 +24,6 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Response interceptor: 401 aane par refresh token se retry karo ──
-// Multiple requests ek saath 401 de sakte hain (jaise screen load pe 3 API
-// calls parallel gayi) — isliye ek queue rakhi hai taaki refresh sirf
-// EK BAAR ho, aur baaki saari waiting requests usi naye token ka use karein.
 let isRefreshing = false;
 let pendingRequests = [];
 
@@ -45,7 +41,6 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Auth endpoints ke apne 401 errors ko refresh-retry logic se bilkul door rakho
     const isAuthEndpoint =
       originalRequest.url?.includes('/auth/refresh') ||
       originalRequest.url?.includes('/auth/login') ||
