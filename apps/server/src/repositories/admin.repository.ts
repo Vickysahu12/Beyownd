@@ -35,7 +35,7 @@ export class AdminRepository {
       .from(taskSubmissions)
       .where(eq(taskSubmissions.userId, id));
 
-    // Flexible matching logic for submission Link
+    // Flexible matching logic & exact submission_url extraction
     const tasksWithSubmissions = studentTasks.map((t) => {
       const sub = submissions.find(
         (s: any) =>
@@ -44,7 +44,10 @@ export class AdminRepository {
           (s.title && t.title && s.title.toLowerCase() === t.title.toLowerCase())
       ) as any;
 
+      // Extract exact submission_url from DB columns
       const extractedUrl =
+        sub?.submission_url ||
+        sub?.submissionUrl ||
         sub?.githubRepoUrl ||
         sub?.github_repo_url ||
         sub?.githubRepo ||
@@ -57,6 +60,7 @@ export class AdminRepository {
       return {
         ...t,
         githubRepoUrl: extractedUrl,
+        submission_url: extractedUrl,
         submissionDetails: sub || null,
       };
     });
