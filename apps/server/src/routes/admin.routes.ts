@@ -14,6 +14,9 @@ router.get("/students", AdminController.getStudents);
 router.get("/students/:id", AdminController.getStudentById);
 router.get("/analytics", AdminController.getAnalytics);
 
+// ⬇️ GET BROADCASTED TASKS ROUTE ⬇️
+router.get("/tasks", AdminController.getTasks);
+
 const broadcastTaskSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),

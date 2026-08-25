@@ -1,10 +1,9 @@
-import { db } from "../config/db"; // ⚠️ apna actual db import path confirm kar lena
+import { db } from "../config/db";
 import { tasks } from "../db/schema/tasks.schema";
 import { notes } from "../db/schema/notes.schema";
-import { dailyActivity } from "../db/schema/dailyActivity.schema";
 import { users } from "../db/schema";
 import { taskSubmissions } from "../db/schema/taskSubmissions.schema";
-import { eq, sql, desc, count, avg } from "drizzle-orm";
+import { eq, desc, count, inArray, sql } from "drizzle-orm";
 
 export class AdminRepository {
   static async getAllStudents() {
@@ -63,7 +62,6 @@ export class AdminRepository {
       .from(users)
       .groupBy(users.currentYear);
 
-    // Pichle 7 din ke signups — daily activity table use karke ya createdAt se group karke
     const recentSignups = await db.execute(sql`
       SELECT DATE(created_at) as date, COUNT(*) as count
       FROM users
@@ -82,6 +80,24 @@ export class AdminRepository {
       yearBreakdown,
       recentSignups: recentSignups.rows,
     };
+  }
+
+  // ⬇️ ADDED METHOD FOR GROUPED TASK LISTING ⬇️
+  static async getAllTasksGrouped() {
+    return db
+      .select({
+        title: tasks.title,
+        description: tasks.description,
+        difficulty: tasks.difficulty,
+        estimated_hours: tasks.estimatedHours,
+        dueDate: tasks.dueDate,
+        total_assigned: count(tasks.id),
+        total_completed: sql<number>`SUM(CASE WHEN ${tasks.status} = 'completed' THEN 1 ELSE 0 END)`,
+        ids: sql<string[]>`array_agg(${tasks.id})`,
+      })
+      .from(tasks)
+      .groupBy(tasks.title, tasks.description, tasks.difficulty, tasks.estimatedHours, tasks.dueDate)
+      .orderBy(desc(sql`MAX(${tasks.createdAt})`));
   }
 
   static async getAllVerifiedUserIds() {
@@ -129,8 +145,13 @@ export class AdminRepository {
     return db.insert(notes).values(rows).returning();
   }
 
-  static async deleteTaskEverywhere(taskId: string) {
-    return db.delete(tasks).where(eq(tasks.id, taskId));
+  static async deleteTaskEverywhere(taskIdOrTitle: string) {
+    // Delete single task OR broadcast group by ID/Title match
+    return db
+      .delete(tasks)
+      .where(
+        sql`${tasks.id} = ${taskIdOrTitle} OR ${tasks.title} = ${taskIdOrTitle}`
+      );
   }
 
   static async deleteNoteEverywhere(noteId: string) {

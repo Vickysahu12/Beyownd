@@ -33,6 +33,16 @@ export class AdminController {
     }
   }
 
+  // ⬇️ ADDED GET ALL TASKS FOR ADMIN PANEL ⬇️
+  static async getTasks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tasksList = await AdminRepository.getAllTasksGrouped();
+      res.status(200).json(new ApiResponse(200, tasksList, "Admin tasks fetched successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createTask(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await AdminRepository.broadcastTask(req.body);
