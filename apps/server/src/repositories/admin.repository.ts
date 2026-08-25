@@ -35,12 +35,17 @@ export class AdminRepository {
       .from(taskSubmissions)
       .where(eq(taskSubmissions.userId, id));
 
-    // Fixes TypeScript error by using type casting and property fallbacks
+    // Maps task along with submission repo url matching taskId
     const tasksWithSubmissions = studentTasks.map((t) => {
-      const sub = submissions.find((s) => s.taskId === t.id) as any;
+      const sub = submissions.find((s) => String(s.taskId) === String(t.id)) as any;
       return {
         ...t,
-        githubRepoUrl: sub?.githubRepoUrl || sub?.githubRepo || sub?.github_repo_url || null,
+        githubRepoUrl:
+          sub?.githubRepoUrl ||
+          sub?.githubRepo ||
+          sub?.github_repo_url ||
+          sub?.repoUrl ||
+          null,
         submissionDetails: sub || null,
       };
     });
