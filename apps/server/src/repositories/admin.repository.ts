@@ -35,17 +35,28 @@ export class AdminRepository {
       .from(taskSubmissions)
       .where(eq(taskSubmissions.userId, id));
 
-    // Maps task along with submission repo url matching taskId
+    // Flexible matching logic for submission Link
     const tasksWithSubmissions = studentTasks.map((t) => {
-      const sub = submissions.find((s) => String(s.taskId) === String(t.id)) as any;
+      const sub = submissions.find(
+        (s: any) =>
+          String(s.taskId) === String(t.id) ||
+          String(s.task_id) === String(t.id) ||
+          (s.title && t.title && s.title.toLowerCase() === t.title.toLowerCase())
+      ) as any;
+
+      const extractedUrl =
+        sub?.githubRepoUrl ||
+        sub?.github_repo_url ||
+        sub?.githubRepo ||
+        sub?.repoUrl ||
+        sub?.link ||
+        sub?.github_url ||
+        sub?.url ||
+        null;
+
       return {
         ...t,
-        githubRepoUrl:
-          sub?.githubRepoUrl ||
-          sub?.githubRepo ||
-          sub?.github_repo_url ||
-          sub?.repoUrl ||
-          null,
+        githubRepoUrl: extractedUrl,
         submissionDetails: sub || null,
       };
     });
