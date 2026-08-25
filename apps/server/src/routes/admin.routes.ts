@@ -14,7 +14,7 @@ router.get("/students", AdminController.getStudents);
 router.get("/students/:id", AdminController.getStudentById);
 router.get("/analytics", AdminController.getAnalytics);
 
-// ⬇️ GET BROADCASTED TASKS ROUTE ⬇️
+// Tasks routes
 router.get("/tasks", AdminController.getTasks);
 
 const broadcastTaskSchema = z.object({
@@ -35,6 +35,8 @@ const broadcastNoteSchema = z.object({
 router.post("/tasks", validate(broadcastTaskSchema), AdminController.createTask);
 router.delete("/tasks/:id", AdminController.deleteTask);
 
+// Notes routes
+router.get("/notes", AdminController.getNotes);
 router.post("/notes", validate(broadcastNoteSchema), AdminController.createNote);
 router.delete("/notes/:id", AdminController.deleteNote);
 

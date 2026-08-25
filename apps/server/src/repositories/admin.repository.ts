@@ -3,7 +3,7 @@ import { tasks } from "../db/schema/tasks.schema";
 import { notes } from "../db/schema/notes.schema";
 import { users } from "../db/schema";
 import { taskSubmissions } from "../db/schema/taskSubmissions.schema";
-import { eq, desc, count, inArray, sql } from "drizzle-orm";
+import { eq, desc, count, sql } from "drizzle-orm";
 
 export class AdminRepository {
   static async getAllStudents() {
@@ -35,7 +35,17 @@ export class AdminRepository {
       .from(taskSubmissions)
       .where(eq(taskSubmissions.userId, id));
 
-    return { ...student, tasks: studentTasks, notes: studentNotes, submissions };
+    // Fixes TypeScript error by using type casting and property fallbacks
+    const tasksWithSubmissions = studentTasks.map((t) => {
+      const sub = submissions.find((s) => s.taskId === t.id) as any;
+      return {
+        ...t,
+        githubRepoUrl: sub?.githubRepoUrl || sub?.githubRepo || sub?.github_repo_url || null,
+        submissionDetails: sub || null,
+      };
+    });
+
+    return { ...student, tasks: tasksWithSubmissions, notes: studentNotes, submissions };
   }
 
   static async getAnalytics() {
@@ -82,7 +92,6 @@ export class AdminRepository {
     };
   }
 
-  // ⬇️ ADDED METHOD FOR GROUPED TASK LISTING ⬇️
   static async getAllTasksGrouped() {
     return db
       .select({
@@ -98,6 +107,21 @@ export class AdminRepository {
       .from(tasks)
       .groupBy(tasks.title, tasks.description, tasks.difficulty, tasks.estimatedHours, tasks.dueDate)
       .orderBy(desc(sql`MAX(${tasks.createdAt})`));
+  }
+
+  static async getAllNotesGrouped() {
+    return db
+      .select({
+        title: notes.title,
+        content: notes.content,
+        track: notes.track,
+        icon: notes.icon,
+        total_assigned: count(notes.id),
+        ids: sql<string[]>`array_agg(${notes.id})`,
+      })
+      .from(notes)
+      .groupBy(notes.title, notes.content, notes.track, notes.icon)
+      .orderBy(desc(sql`MAX(${notes.createdAt})`));
   }
 
   static async getAllVerifiedUserIds() {
@@ -146,15 +170,18 @@ export class AdminRepository {
   }
 
   static async deleteTaskEverywhere(taskIdOrTitle: string) {
-    // Delete single task OR broadcast group by ID/Title match
     return db
       .delete(tasks)
       .where(
-        sql`${tasks.id} = ${taskIdOrTitle} OR ${tasks.title} = ${taskIdOrTitle}`
+        sql`${tasks.id}::text = ${taskIdOrTitle} OR ${tasks.title} = ${taskIdOrTitle}`
       );
   }
 
-  static async deleteNoteEverywhere(noteId: string) {
-    return db.delete(notes).where(eq(notes.id, noteId));
+  static async deleteNoteEverywhere(noteIdOrTitle: string) {
+    return db
+      .delete(notes)
+      .where(
+        sql`${notes.id}::text = ${noteIdOrTitle} OR ${notes.title} = ${noteIdOrTitle}`
+      );
   }
 }

@@ -33,11 +33,20 @@ export class AdminController {
     }
   }
 
-  // ⬇️ ADDED GET ALL TASKS FOR ADMIN PANEL ⬇️
   static async getTasks(req: Request, res: Response, next: NextFunction) {
     try {
       const tasksList = await AdminRepository.getAllTasksGrouped();
       res.status(200).json(new ApiResponse(200, tasksList, "Admin tasks fetched successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ⬇️ ADDED GET ALL NOTES METHOD ⬇️
+  static async getNotes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const notesList = await AdminRepository.getAllNotesGrouped();
+      res.status(200).json(new ApiResponse(200, notesList, "Admin notes fetched successfully"));
     } catch (error) {
       next(error);
     }
@@ -63,7 +72,8 @@ export class AdminController {
 
   static async deleteTask(req: Request, res: Response, next: NextFunction) {
     try {
-      await AdminRepository.deleteTaskEverywhere(String(req.params.id));
+      const target = decodeURIComponent(String(req.params.id));
+      await AdminRepository.deleteTaskEverywhere(target);
       res.status(200).json(new ApiResponse(200, null, "Task deleted for all students"));
     } catch (error) {
       next(error);
@@ -72,7 +82,8 @@ export class AdminController {
 
   static async deleteNote(req: Request, res: Response, next: NextFunction) {
     try {
-      await AdminRepository.deleteNoteEverywhere(String(req.params.id));
+      const target = decodeURIComponent(String(req.params.id));
+      await AdminRepository.deleteNoteEverywhere(target);
       res.status(200).json(new ApiResponse(200, null, "Note deleted for all students"));
     } catch (error) {
       next(error);
