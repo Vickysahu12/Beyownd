@@ -2,10 +2,10 @@ import { Router } from "express";
 import { TaskController } from "../controllers/task.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 import { validate } from "../middlewares/validate.middleware";
+import { adminOnly } from "../middlewares/adminOnly.middleware";
 import { z } from "zod";
 
 const router = Router();
-
 router.use(authenticate);
 
 const createTaskSchema = z.object({
@@ -15,10 +15,7 @@ const createTaskSchema = z.object({
   estimatedHours: z.string().optional(),
   dueDate: z.string().optional(),
 });
-
-const updateStatusSchema = z.object({
-  status: z.enum(["pending", "in_progress", "completed"]),
-});
+const updateTaskSchema = createTaskSchema.partial();
 
 const submitSchema = z.object({
   submissionType: z.enum(["link", "text", "file"]).default("link"),
@@ -26,12 +23,11 @@ const submitSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.get("/:id", TaskController.getTaskById);
-router.post("/:id/submit", validate(submitSchema), TaskController.submitTask);
-
-router.post("/", validate(createTaskSchema), TaskController.createTask);
 router.get("/", TaskController.getTasks);
-router.patch("/:id/status", validate(updateStatusSchema), TaskController.updateTaskStatus);
-router.delete("/:id", TaskController.deleteTask);
+router.get("/:id", TaskController.getTaskById);
+router.post("/", validate(createTaskSchema), adminOnly, TaskController.createTask);
+router.put("/:id", validate(updateTaskSchema), adminOnly, TaskController.updateTask);
+router.delete("/:id", adminOnly, TaskController.deleteTask);
+router.post("/:id/submit", validate(submitSchema), TaskController.submitTask);
 
 export default router;

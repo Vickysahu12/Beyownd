@@ -1,51 +1,53 @@
 import { db } from "../config/db";
 import { tasks } from "../db/schema/tasks.schema";
 import { notes } from "../db/schema/notes.schema";
+import { taskSubmissions } from "../db/schema/taskSubmissions.schema";
+import { userNoteProgress } from "../db/schema/userNoteProgress.schema";
 import { dailyActivity } from "../db/schema/dailyActivity.schema";
-import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { eq, desc, asc, sql, notInArray } from "drizzle-orm";
 
 export class HomeRepository {
   static async getTaskStats(userId: string) {
-    const result = await db
-      .select({
-        total: sql<number>`count(*)`,
-        completed: sql<number>`count(*) filter (where ${tasks.status} = 'completed')`,
-      })
-      .from(tasks)
-      .where(eq(tasks.userId, userId));
-    return result[0];
+    const totalResult = await db.select({ total: sql<number>`count(*)` }).from(tasks);
+    const completedResult = await db
+      .select({ completed: sql<number>`count(distinct ${taskSubmissions.taskId})` })
+      .from(taskSubmissions)
+      .where(eq(taskSubmissions.userId, userId));
+    return {
+      total: Number(totalResult[0]?.total || 0),
+      completed: Number(completedResult[0]?.completed || 0),
+    };
   }
 
   static async getNoteStats(userId: string) {
-    const result = await db
+    const totalResult = await db.select({ total: sql<number>`count(*)` }).from(notes);
+    const progressResult = await db
       .select({
-        total: sql<number>`count(*)`,
-        avgProgress: sql<number>`coalesce(avg(${notes.progress}), 0)`,
-        completedCount: sql<number>`count(*) filter (where ${notes.progress} >= 100)`,
+        avgProgress: sql<number>`coalesce(avg(${userNoteProgress.progress}), 0)`,
+        completedCount: sql<number>`count(*) filter (where ${userNoteProgress.progress} >= 100)`,
       })
-      .from(notes)
-      .where(eq(notes.userId, userId));
-    return result[0];
+      .from(userNoteProgress)
+      .where(eq(userNoteProgress.userId, userId));
+    return {
+      total: Number(totalResult[0]?.total || 0),
+      avgProgress: Number(progressResult[0]?.avgProgress || 0),
+      completedCount: Number(progressResult[0]?.completedCount || 0),
+    };
   }
 
   static async getFeaturedTask(userId: string) {
-    const inProgress = await db
-      .select()
-      .from(tasks)
-      .where(and(eq(tasks.userId, userId), eq(tasks.status, "in_progress")))
-      .orderBy(desc(tasks.updatedAt))
-      .limit(1);
+    const submittedResult = await db
+      .selectDistinct({ taskId: taskSubmissions.taskId })
+      .from(taskSubmissions)
+      .where(eq(taskSubmissions.userId, userId));
+    const submittedIds = submittedResult.map((r) => r.taskId);
 
-    if (inProgress[0]) return inProgress[0];
+    const query = submittedIds.length > 0
+      ? db.select().from(tasks).where(notInArray(tasks.id, submittedIds)).orderBy(asc(tasks.createdAt)).limit(1)
+      : db.select().from(tasks).orderBy(asc(tasks.createdAt)).limit(1);
 
-    const pending = await db
-      .select()
-      .from(tasks)
-      .where(and(eq(tasks.userId, userId), eq(tasks.status, "pending")))
-      .orderBy(asc(tasks.createdAt))
-      .limit(1);
-
-    return pending[0] || null;
+    const result = await query;
+    return result[0] || null;
   }
 
   static async getRecentActivityDates(userId: string, days: number) {

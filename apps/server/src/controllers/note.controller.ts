@@ -16,8 +16,19 @@ export class NoteController {
   static async getNotes(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req as any).user.userId;
-      const notes = await NoteService.getUserNotes(userId);
+      const notes = await NoteService.getAllNotesForUser(userId);
       res.status(200).json(new ApiResponse(200, notes, "Notes fetched successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getNoteById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user.userId;
+      const id = req.params.id as string;
+      const result = await NoteService.getNoteById(id, userId);
+      res.status(200).json(new ApiResponse(200, result, "Note fetched successfully"));
     } catch (error) {
       next(error);
     }
@@ -25,9 +36,8 @@ export class NoteController {
 
   static async updateNote(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user.userId;
       const id = req.params.id as string;
-      const updatedNote = await NoteService.updateNote(id, userId, req.body);
+      const updatedNote = await NoteService.updateNote(id, req.body);
       res.status(200).json(new ApiResponse(200, updatedNote, "Note updated successfully"));
     } catch (error) {
       next(error);
@@ -36,35 +46,23 @@ export class NoteController {
 
   static async deleteNote(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user.userId;
       const id = req.params.id as string;
-      await NoteService.deleteNote(id, userId);
+      await NoteService.deleteNote(id);
       res.status(200).json(new ApiResponse(200, null, "Note deleted successfully"));
     } catch (error) {
       next(error);
     }
   }
-  
-  static async getNoteById(req: Request, res: Response, next: NextFunction) {
-  try {
-    const userId = (req as any).user.userId;
-    const id = req.params.id as string;
-    const result = await NoteService.getNoteById(id, userId);
-    res.status(200).json(new ApiResponse(200, result, "Note fetched successfully"));
-  } catch (error) {
-    next(error);
-  }
-}
 
-static async updateProgress(req: Request, res: Response, next: NextFunction) {
-  try {
-    const userId = (req as any).user.userId;
-    const id = req.params.id as string;
-    const { progress } = req.body;
-    const result = await NoteService.updateProgress(id, userId, progress);
-    res.status(200).json(new ApiResponse(200, result, "Progress updated successfully"));
-  } catch (error) {
-    next(error);
+  static async updateProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user.userId;
+      const id = req.params.id as string;
+      const { progress } = req.body;
+      const result = await NoteService.updateProgress(id, userId, progress);
+      res.status(200).json(new ApiResponse(200, result, "Progress updated successfully"));
+    } catch (error) {
+      next(error);
+    }
   }
-}
 }
