@@ -3,7 +3,8 @@ import { tasks } from "../db/schema/tasks.schema";
 import { notes } from "../db/schema/notes.schema";
 import { users } from "../db/schema";
 import { taskSubmissions } from "../db/schema/taskSubmissions.schema";
-import { eq, desc, count, sql } from "drizzle-orm";
+import { userNoteProgress } from "../db/schema/userNoteProgress.schema";
+import { eq, desc, count, sql, inArray } from "drizzle-orm";
 
 export class AdminRepository {
   static async getAllStudents() {
@@ -28,26 +29,30 @@ export class AdminRepository {
     const [student] = await db.select().from(users).where(eq(users.id, id));
     if (!student) return null;
 
-    const studentTasks = await db.select().from(tasks).where(eq(tasks.userId, id));
-    const studentNotes = await db.select().from(notes).where(eq(notes.userId, id));
+    // Tasks & Notes ab global hain, saare fetch honge
+    const allTasks = await db.select().from(tasks);
+    const allNotes = await db.select().from(notes);
+    
+    // User ke submissions aur note progress fetch karo
     const submissions = await db
       .select()
       .from(taskSubmissions)
       .where(eq(taskSubmissions.userId, id));
 
-    // Flexible matching logic & exact submission_url extraction
-    const tasksWithSubmissions = studentTasks.map((t) => {
-      const sub = submissions.find(
-        (s: any) =>
-          String(s.taskId) === String(t.id) ||
-          String(s.task_id) === String(t.id) ||
-          (s.title && t.title && s.title.toLowerCase() === t.title.toLowerCase())
-      ) as any;
+    const noteProgressRows = await db
+      .select()
+      .from(userNoteProgress)
+      .where(eq(userNoteProgress.userId, id));
 
-      // Extract exact submission_url from DB columns
+    const progressMap = new Map(noteProgressRows.map((p) => [p.noteId, p.progress]));
+
+    // Tasks ke saath submission status map karo
+    const tasksWithSubmissions = allTasks.map((t) => {
+      const sub = submissions.find((s: any) => String(s.taskId) === String(t.id)) as any;
+
       const extractedUrl =
-        sub?.submission_url ||
         sub?.submissionUrl ||
+        sub?.submission_url ||
         sub?.githubRepoUrl ||
         sub?.github_repo_url ||
         sub?.githubRepo ||
@@ -59,13 +64,25 @@ export class AdminRepository {
 
       return {
         ...t,
+        status: sub ? "completed" : "pending",
         githubRepoUrl: extractedUrl,
         submission_url: extractedUrl,
         submissionDetails: sub || null,
       };
     });
 
-    return { ...student, tasks: tasksWithSubmissions, notes: studentNotes, submissions };
+    // Notes ke saath progress map karo
+    const notesWithProgress = allNotes.map((n) => ({
+      ...n,
+      progress: progressMap.get(n.id) || 0,
+    }));
+
+    return { 
+      ...student, 
+      tasks: tasksWithSubmissions, 
+      notes: notesWithProgress, 
+      submissions 
+    };
   }
 
   static async getAnalytics() {
@@ -75,12 +92,12 @@ export class AdminRepository {
       .from(users)
       .where(eq(users.isVerified, true));
 
+    const [totalTasks] = await db.select({ count: count() }).from(tasks);
+    
+    // Total completed tasks across all users from taskSubmissions
     const [tasksCompleted] = await db
       .select({ count: count() })
-      .from(tasks)
-      .where(eq(tasks.status, "completed"));
-
-    const [totalTasks] = await db.select({ count: count() }).from(tasks);
+      .from(taskSubmissions);
 
     const techInterestBreakdown = await db
       .select({ techInterest: users.techInterest, count: count() })
@@ -105,7 +122,7 @@ export class AdminRepository {
       verifiedStudents: verifiedStudents.count,
       totalTasks: totalTasks.count,
       tasksCompleted: tasksCompleted.count,
-      completionRate: totalTasks.count > 0 ? Math.round((tasksCompleted.count / totalTasks.count) * 100) : 0,
+      completionRate: totalTasks.count > 0 ? Math.round((tasksCompleted.count / (totalTasks.count * (totalStudents.count || 1))) * 100) : 0,
       techInterestBreakdown,
       yearBreakdown,
       recentSignups: recentSignups.rows,
@@ -113,43 +130,43 @@ export class AdminRepository {
   }
 
   static async getAllTasksGrouped() {
-    return db
-      .select({
-        title: tasks.title,
-        description: tasks.description,
-        difficulty: tasks.difficulty,
-        estimated_hours: tasks.estimatedHours,
-        dueDate: tasks.dueDate,
-        total_assigned: count(tasks.id),
-        total_completed: sql<number>`SUM(CASE WHEN ${tasks.status} = 'completed' THEN 1 ELSE 0 END)`,
-        ids: sql<string[]>`array_agg(${tasks.id})`,
-      })
-      .from(tasks)
-      .groupBy(tasks.title, tasks.description, tasks.difficulty, tasks.estimatedHours, tasks.dueDate)
-      .orderBy(desc(sql`MAX(${tasks.createdAt})`));
+    // Kyunki tasks ab global hain, directly tasks table se fetch karenge
+    const allTasks = await db.select().from(tasks);
+    
+    // Har task ke liye total submissions (completion count) nikal lo
+    const result = [];
+    for (const t of allTasks) {
+      const [subCount] = await db
+        .select({ count: count() })
+        .from(taskSubmissions)
+        .where(eq(taskSubmissions.taskId, t.id));
+
+      result.push({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        difficulty: t.difficulty,
+        estimated_hours: t.estimatedHours,
+        dueDate: t.dueDate,
+        total_assigned: await db.select({ count: count() }).from(users).then(res => res[0].count),
+        total_completed: Number(subCount?.count || 0),
+        ids: [t.id],
+      });
+    }
+    return result;
   }
 
   static async getAllNotesGrouped() {
-    return db
-      .select({
-        title: notes.title,
-        content: notes.content,
-        track: notes.track,
-        icon: notes.icon,
-        total_assigned: count(notes.id),
-        ids: sql<string[]>`array_agg(${notes.id})`,
-      })
-      .from(notes)
-      .groupBy(notes.title, notes.content, notes.track, notes.icon)
-      .orderBy(desc(sql`MAX(${notes.createdAt})`));
-  }
-
-  static async getAllVerifiedUserIds() {
-    const rows = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.isVerified, true));
-    return rows.map((r) => r.id);
+    const allNotes = await db.select().from(notes);
+    return allNotes.map((n) => ({
+      id: n.id,
+      title: n.title,
+      content: n.content,
+      track: n.track,
+      icon: n.icon,
+      total_assigned: 0,
+      ids: [n.id],
+    }));
   }
 
   static async broadcastTask(taskData: {
@@ -158,35 +175,32 @@ export class AdminRepository {
     difficulty: "beginner" | "intermediate" | "advanced";
     estimatedHours?: string;
     dueDate?: string;
+    createdBy?: string;
   }) {
-    const userIds = await this.getAllVerifiedUserIds();
-    if (userIds.length === 0) return [];
-
-    const rows = userIds.map((userId) => ({
-      userId,
+    // Tasks ab global hain, toh broadcast ka matlab ek single global task create karna hai
+    const result = await db.insert(tasks).values({
       title: taskData.title,
       description: taskData.description,
       difficulty: taskData.difficulty,
       estimatedHours: taskData.estimatedHours,
       dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
-    }));
+      createdBy: taskData.createdBy,
+    }).returning();
 
-    return db.insert(tasks).values(rows).returning();
+    return result;
   }
 
-  static async broadcastNote(noteData: { title: string; content?: string; track?: string; icon?: string }) {
-    const userIds = await this.getAllVerifiedUserIds();
-    if (userIds.length === 0) return [];
-
-    const rows = userIds.map((userId) => ({
-      userId,
+  static async broadcastNote(noteData: { title: string; content?: string; track?: string; icon?: string; createdBy?: string }) {
+    // Notes bhi ab global hain, ek single global note create hoga
+    const result = await db.insert(notes).values({
       title: noteData.title,
       content: noteData.content,
       track: noteData.track,
       icon: noteData.icon,
-    }));
+      createdBy: noteData.createdBy,
+    }).returning();
 
-    return db.insert(notes).values(rows).returning();
+    return result;
   }
 
   static async deleteTaskEverywhere(taskIdOrTitle: string) {
