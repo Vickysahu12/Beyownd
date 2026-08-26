@@ -1,15 +1,71 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, StatusBar } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Switch,
+  StatusBar,
+  RefreshControl,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 
 import { useHomeTheme } from "@/context/ThemeContext";
 import { apiClient } from "@/api/client";
 import ScreenStateWrapper from "@/components/common/ScreenStateWrapper";
 import InviteCard from "@/components/ui/profile/InviteCard";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function DuoStatCard({ icon, val, label, color, borderColor, index }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(150 + index * 40).duration(350)}
+      style={styles.gridItemWrapper}
+    >
+      <AnimatedPressable
+        style={[
+          styles.duoStatCard,
+          {
+            backgroundColor: color + "12",
+            borderColor: borderColor || color,
+          },
+          animatedStyle,
+        ]}
+        onPressIn={() => (scale.value = withSpring(0.96))}
+        onPressOut={() => (scale.value = withSpring(1))}
+        onPress={() => Haptics.selectionAsync()}
+      >
+        <View style={styles.statHeader}>
+          <View style={[styles.statIconBadge, { backgroundColor: color }]}>
+            <Ionicons name={icon} size={18} color="#FFFFFF" />
+          </View>
+          <Text style={[styles.duoStatValue, { color }]}>{val}</Text>
+        </View>
+        <Text style={styles.duoStatLabel}>{label}</Text>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -20,6 +76,7 @@ export default function ProfileScreen() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -43,94 +100,323 @@ export default function ProfileScreen() {
     fetchData();
   }, [fetchData]);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.bg }]}
+      edges={["top"]}
+    >
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      <View style={[styles.header, { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" }]}>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
-          MY PROFILE
+      <View
+        style={[
+          styles.header,
+          { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" },
+        ]}
+      >
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: colors.textPrimary, fontFamily: fonts.headingBold },
+          ]}
+        >
+          PROFILE
         </Text>
         <Pressable
-          style={[styles.iconBtn, { backgroundColor: colors.surface || "#18181B" }]}
-          onPress={() => { Haptics.selectionAsync(); router.push("/settings"); }}
+          style={[
+            styles.settingsBtn,
+            {
+              backgroundColor: colors.surface || "#18181B",
+              borderColor: colors.border || "rgba(255,255,255,0.12)",
+            },
+          ]}
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push("/settings");
+          }}
         >
-          <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+          <Ionicons
+            name="settings-sharp"
+            size={18}
+            color={colors.textPrimary}
+          />
         </Pressable>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       >
-        <ScreenStateWrapper loading={loading} error={error} isEmpty={false} onRetry={fetchData} skeletonCount={3}>
+        <ScreenStateWrapper
+          loading={loading}
+          error={error}
+          isEmpty={false}
+          onRetry={fetchData}
+          skeletonCount={3}
+        >
           {profile && dashboard && (
             <>
-              <Animated.View entering={FadeInDown.duration(400)} style={styles.userCard}>
-                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.accentSoft || "rgba(255,87,34,0.15)" }]}>
-                  <Text style={[styles.avatarInitial, { color: colors.accent || "#FF5722", fontFamily: fonts.headingBold }]}>
-                    {profile.name?.charAt(0)?.toUpperCase() || "U"}
-                  </Text>
+              <Animated.View
+                entering={FadeInDown.duration(400)}
+                style={[
+                  styles.duoUserCard,
+                  {
+                    backgroundColor: colors.surface || "#18181B",
+                    borderColor: colors.border || "rgba(255,255,255,0.12)",
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.avatarWrapper,
+                    { borderColor: colors.accent || "#FF5722" },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.avatarBody,
+                      {
+                        backgroundColor:
+                          colors.accentSoft || "rgba(255,87,34,0.18)",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.avatarText,
+                        {
+                          color: colors.accent || "#FF5722",
+                          fontFamily: fonts.headingBold,
+                        },
+                      ]}
+                    >
+                      {profile.name?.charAt(0)?.toUpperCase() || "U"}
+                    </Text>
+                  </View>
                 </View>
 
                 <View style={styles.userInfo}>
-                  <Text style={[styles.userName, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+                  <Text
+                    style={[
+                      styles.userName,
+                      {
+                        color: colors.textPrimary,
+                        fontFamily: fonts.headingBold,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {profile.name}
                   </Text>
-                  <Text style={[styles.userHandle, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                  <Text
+                    style={[
+                      styles.userHandle,
+                      {
+                        color: colors.textMuted,
+                        fontFamily: fonts.bodyMedium,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {profile.email}
                   </Text>
-                </View>
-              </Animated.View>
 
-              <Animated.View entering={FadeInDown.delay(100).duration(400)} style={[styles.xpCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}>
-                <View style={styles.xpHeader}>
-                  <Text style={[styles.xpLabel, { color: colors.textMuted, fontFamily: fonts.bodyMedium }]}>
-                    CAREER READINESS
-                  </Text>
-                  <Text style={[styles.xpValue, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
-                    {dashboard.readiness}%
-                  </Text>
-                </View>
-                <View style={styles.xpBarTrack}>
-                  <View style={[styles.xpBarFill, { width: `${dashboard.readiness}%`, backgroundColor: colors.accent || "#FF5722" }]} />
-                </View>
-              </Animated.View>
-
-              <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.statsGrid}>
-                {[
-                  { icon: "checkbox-outline", val: dashboard.stats.tasksDone, label: "Tasks Done", color: "#6366F1" },
-                  { icon: "book-outline", val: dashboard.stats.notesRead, label: "Notes Read", color: "#EC4899" },
-                  { icon: "flame-outline", val: dashboard.streak, label: "Day Streak", color: "#FF5722" },
-                  { icon: "trending-up-outline", val: `+${dashboard.weeklyChange}%`, label: "This Week", color: "#10B981" },
-                ].map((stat, i) => (
-                  <View key={i} style={[styles.statBox, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}>
-                    <Ionicons name={stat.icon} size={20} color={stat.color} />
-                    <Text style={[styles.statValue, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
-                      {stat.val}
+                  <View style={styles.streakPill}>
+                    <Ionicons name="flame" size={14} color="#FF9600" />
+                    <Text
+                      style={[
+                        styles.streakPillText,
+                        { fontFamily: fonts.headingBold },
+                      ]}
+                    >
+                      {dashboard.streak || 0} DAY STREAK
                     </Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted, fontFamily: fonts.body }]}>{stat.label}</Text>
                   </View>
-                ))}
+                </View>
               </Animated.View>
+
+              <Animated.View
+                entering={FadeInDown.delay(100).duration(400)}
+                style={[
+                  styles.xpCard,
+                  {
+                    backgroundColor: colors.surface || "#18181B",
+                    borderColor: colors.border || "rgba(255,255,255,0.12)",
+                  },
+                ]}
+              >
+                <View style={styles.xpHeader}>
+                  <View style={styles.xpHeaderLeft}>
+                    <Ionicons name="flash" size={18} color="#FFD700" />
+                    <Text
+                      style={[
+                        styles.xpLabel,
+                        {
+                          color: colors.textPrimary,
+                          fontFamily: fonts.headingBold,
+                        },
+                      ]}
+                    >
+                      CAREER READINESS
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.xpValue,
+                      {
+                        color: colors.accent || "#FF5722",
+                        fontFamily: fonts.headingBold,
+                      },
+                    ]}
+                  >
+                    {dashboard.readiness || 0}%
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.xpBarTrack,
+                    {
+                      backgroundColor:
+                        colors.border || "rgba(255,255,255,0.08)",
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.xpBarFill,
+                      {
+                        width: `${dashboard.readiness || 0}%`,
+                        backgroundColor: colors.accent || "#FF5722",
+                      },
+                    ]}
+                  />
+                </View>
+              </Animated.View>
+
+              <Text
+                style={[
+                  styles.sectionHeaderTitle,
+                  { color: colors.textMuted, fontFamily: fonts.headingBold },
+                ]}
+              >
+                STATISTICS
+              </Text>
+
+              <View style={styles.statsGrid}>
+                {[
+                  {
+                    icon: "checkmark-done-sharp",
+                    val: dashboard.stats?.tasksDone || 0,
+                    label: "Tasks Done",
+                    color: "#58CC02",
+                    borderColor: "#46A302",
+                  },
+                  {
+                    icon: "book-sharp",
+                    val: dashboard.stats?.notesRead || 0,
+                    label: "Notes Read",
+                    color: "#CE82FF",
+                    borderColor: "#A55BE0",
+                  },
+                  {
+                    icon: "flame-sharp",
+                    val: dashboard.streak || 0,
+                    label: "Day Streak",
+                    color: "#FF9600",
+                    borderColor: "#E27B00",
+                  },
+                  {
+                    icon: "trending-up-sharp",
+                    val: `+${dashboard.weeklyChange || 0}%`,
+                    label: "This Week",
+                    color: "#1CB0F6",
+                    borderColor: "#1899D6",
+                  },
+                ].map((stat, i) => (
+                  <DuoStatCard
+                    key={i}
+                    index={i}
+                    icon={stat.icon}
+                    val={stat.val}
+                    label={stat.label}
+                    color={stat.color}
+                    borderColor={stat.borderColor}
+                  />
+                ))}
+              </View>
 
               <InviteCard />
 
-              <Animated.View entering={FadeInDown.delay(200).duration(400)} style={[styles.sectionCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}>
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi, marginBottom: 12 }]}>
+              <Animated.View
+                entering={FadeInDown.delay(200).duration(400)}
+                style={[
+                  styles.preferencesCard,
+                  {
+                    backgroundColor: colors.surface || "#18181B",
+                    borderColor: colors.border || "rgba(255,255,255,0.12)",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {
+                      color: colors.textMuted,
+                      fontFamily: fonts.headingBold,
+                    },
+                  ]}
+                >
                   PREFERENCES
                 </Text>
+
                 <View style={styles.settingRow}>
                   <View style={styles.settingLeft}>
-                    <Ionicons name="moon-outline" size={20} color={colors.textPrimary} />
-                    <Text style={[styles.settingText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>
+                    <View style={styles.settingIconBox}>
+                      <Ionicons
+                        name="moon-sharp"
+                        size={18}
+                        color={colors.textPrimary}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.settingText,
+                        {
+                          color: colors.textPrimary,
+                          fontFamily: fonts.headingSemi,
+                        },
+                      ]}
+                    >
                       Dark Mode
                     </Text>
                   </View>
                   <Switch
                     value={isDark}
-                    onValueChange={() => { Haptics.selectionAsync(); toggleTheme(); }}
-                    trackColor={{ false: "#3F3F46", true: colors.accent || "#FF5722" }}
+                    onValueChange={() => {
+                      Haptics.selectionAsync();
+                      toggleTheme();
+                    }}
+                    trackColor={{
+                      false: "#3F3F46",
+                      true: colors.accent || "#FF5722",
+                    }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -145,29 +431,145 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { height: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, borderBottomWidth: 1 },
-  headerTitle: { fontSize: 15, letterSpacing: 0.8 },
-  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  header: {
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    borderBottomWidth: 2,
+  },
+  headerTitle: { fontSize: 16, letterSpacing: 1 },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderBottomWidth: 4,
+  },
   scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
-  userCard: { flexDirection: "row", alignItems: "center", marginBottom: 20, gap: 14 },
-  avatarPlaceholder: { width: 66, height: 66, borderRadius: 33, alignItems: "center", justifyContent: "center" },
-  avatarInitial: { fontSize: 26 },
-  userInfo: { flex: 1 },
-  userName: { fontSize: 19, letterSpacing: -0.3 },
-  userHandle: { fontSize: 13, marginTop: 2 },
-  xpCard: { padding: 16, borderRadius: 18, borderWidth: 1, marginBottom: 16 },
-  xpHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  xpLabel: { fontSize: 12, letterSpacing: 0.5 },
-  xpValue: { fontSize: 14 },
-  xpBarTrack: { height: 8, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 4, overflow: "hidden" },
-  xpBarFill: { height: "100%", borderRadius: 4 },
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
-  statBox: { width: "48%", padding: 14, borderRadius: 16, borderWidth: 1, gap: 6 },
-  statValue: { fontSize: 18, marginTop: 4 },
-  statLabel: { fontSize: 12 },
-  sectionCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 20 },
-  sectionTitle: { fontSize: 13, letterSpacing: 0.5 },
-  settingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
+
+  duoUserCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderBottomWidth: 5,
+    marginBottom: 16,
+    gap: 14,
+  },
+  avatarWrapper: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 3,
+    padding: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarBody: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: { fontSize: 26 },
+  userInfo: { flex: 1, gap: 2 },
+  userName: { fontSize: 20, letterSpacing: -0.3 },
+  userHandle: { fontSize: 13, marginBottom: 4 },
+  streakPill: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255, 150, 0, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#FF9600",
+  },
+  streakPillText: { fontSize: 11, color: "#FF9600" },
+
+  xpCard: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderBottomWidth: 5,
+    marginBottom: 20,
+  },
+  xpHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  xpHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  xpLabel: { fontSize: 13, letterSpacing: 0.5 },
+  xpValue: { fontSize: 16 },
+  xpBarTrack: { height: 12, borderRadius: 6, overflow: "hidden" },
+  xpBarFill: { height: "100%", borderRadius: 6 },
+
+  sectionHeaderTitle: {
+    fontSize: 13,
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 20,
+  },
+  gridItemWrapper: { width: "48%" },
+  duoStatCard: {
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderBottomWidth: 5,
+    gap: 8,
+  },
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  statIconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  duoStatValue: { fontSize: 20, fontWeight: "800" },
+  duoStatLabel: { fontSize: 12, fontWeight: "700", color: "#A1A1AA" },
+
+  preferencesCard: {
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderBottomWidth: 5,
+    marginBottom: 20,
+  },
+  sectionTitle: { fontSize: 12, letterSpacing: 0.8, marginBottom: 10 },
+  settingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   settingLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  settingText: { fontSize: 14 },
+  settingIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingText: { fontSize: 15 },
 });

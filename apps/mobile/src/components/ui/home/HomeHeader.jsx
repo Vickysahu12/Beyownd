@@ -10,10 +10,20 @@ import Animated, {
   withTiming,
   withSpring,
 } from "react-native-reanimated";
-import { useHomeTheme } from "@/context/ThemeContext";
 
-export default function HomeHeader({ name, avatar, streak, hasNotification, isDark, onToggleTheme, onNotificationPress }) {
-  const { colors, fonts } = useHomeTheme();
+// Updated Hook
+import { useAppTheme } from "@/context/ThemeContext";
+
+export default function HomeHeader({
+  name,
+  avatar,
+  streak,
+  hasNotification,
+  isDark,
+  onToggleTheme,
+  onNotificationPress,
+}) {
+  const { colors, fonts } = useAppTheme();
 
   const dotOpacity = useSharedValue(1);
   const bellScale = useSharedValue(1);
@@ -23,7 +33,10 @@ export default function HomeHeader({ name, avatar, streak, hasNotification, isDa
   useEffect(() => {
     if (hasNotification) {
       dotOpacity.value = withRepeat(
-        withSequence(withTiming(0.3, { duration: 800 }), withTiming(1, { duration: 800 })),
+        withSequence(
+          withTiming(0.3, { duration: 800 }),
+          withTiming(1, { duration: 800 })
+        ),
         -1,
         true
       );
@@ -31,52 +44,89 @@ export default function HomeHeader({ name, avatar, streak, hasNotification, isDa
   }, [hasNotification]);
 
   const dotStyle = useAnimatedStyle(() => ({ opacity: dotOpacity.value }));
-  const bellStyle = useAnimatedStyle(() => ({ transform: [{ scale: bellScale.value }] }));
-  const streakStyle = useAnimatedStyle(() => ({ transform: [{ scale: streakScale.value }] }));
-  const themeStyle = useAnimatedStyle(() => ({ transform: [{ scale: themeScale.value }] }));
+  const bellStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bellScale.value }],
+  }));
+  const streakStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: streakScale.value }],
+  }));
+  const themeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: themeScale.value }],
+  }));
 
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <Image source={avatar} style={[styles.avatar, { backgroundColor: colors.accentSoft }]} />
+        <Image
+          source={avatar}
+          style={[styles.avatar, { backgroundColor: colors.accentSoft }]}
+        />
         <View>
-          <Text style={[styles.greeting, { color: colors.textMuted, fontFamily: fonts.body }]}>
+          <Text
+            style={[
+              styles.greeting,
+              { color: colors.textMuted, fontFamily: fonts.body },
+            ]}
+          >
             Good morning,
           </Text>
-          <Text style={[styles.name, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+          <Text
+            style={[
+              styles.name,
+              { color: colors.textPrimary, fontFamily: fonts.headingBold },
+            ]}
+          >
             {name} 👋
           </Text>
         </View>
       </View>
 
       <View style={styles.actions}>
+        {/* Bell Action */}
         <Animated.View style={bellStyle}>
           <Pressable
-            style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
+            style={[
+              styles.iconButton,
+              { backgroundColor: colors.card, borderColor: colors.divider },
+            ]}
             onPress={() => {
               Haptics.selectionAsync();
               bellScale.value = withSpring(0.9, {}, () => {
                 bellScale.value = withSpring(1);
               });
-              if (onNotificationPress) onNotificationPress(); // ← Triggering navigation callback
+              onNotificationPress?.();
             }}
           >
-            <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
+            <Ionicons
+              name="notifications-outline"
+              size={20}
+              color={colors.textPrimary}
+            />
             {hasNotification && (
-              <Animated.View style={[styles.dot, { backgroundColor: colors.danger }, dotStyle]} />
+              <Animated.View
+                style={[
+                  styles.dot,
+                  { backgroundColor: colors.danger },
+                  dotStyle,
+                ]}
+              />
             )}
           </Pressable>
         </Animated.View>
 
+        {/* Theme Action */}
         <Animated.View style={themeStyle}>
           <Pressable
-            style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
+            style={[
+              styles.iconButton,
+              { backgroundColor: colors.card, borderColor: colors.divider },
+            ]}
             onPress={() => {
               Haptics.selectionAsync();
               themeScale.value = withSpring(0.9, {}, () => {
                 themeScale.value = withSpring(1);
               });
-              onToggleTheme();
+              onToggleTheme?.();
             }}
             hitSlop={10}
           >
@@ -88,9 +138,13 @@ export default function HomeHeader({ name, avatar, streak, hasNotification, isDa
           </Pressable>
         </Animated.View>
 
+        {/* Streak Badge */}
         <Animated.View style={streakStyle}>
           <Pressable
-            style={[styles.streakBadge, { backgroundColor: colors.card, borderColor: colors.divider }]}
+            style={[
+              styles.streakBadge,
+              { backgroundColor: colors.card, borderColor: colors.divider },
+            ]}
             onPress={() => {
               Haptics.selectionAsync();
               streakScale.value = withSpring(0.9, {}, () => {
@@ -99,7 +153,12 @@ export default function HomeHeader({ name, avatar, streak, hasNotification, isDa
             }}
           >
             <Ionicons name="flame" size={16} color={colors.accent} />
-            <Text style={[styles.streakText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>
+            <Text
+              style={[
+                styles.streakText,
+                { color: colors.textPrimary, fontFamily: fonts.bodyMedium },
+              ]}
+            >
               {streak}
             </Text>
           </Pressable>
@@ -114,29 +173,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
   },
   left: { flexDirection: "row", flex: 1, gap: 12, alignItems: "center" },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatar: { width: 48, height: 48, borderRadius: 24 },
   greeting: { fontSize: 13 },
-  name: { fontSize: 20, marginTop: 1 },
+  name: { fontSize: 18, marginTop: 1 },
   actions: { flexDirection: "row", gap: 8, alignItems: "center" },
   iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
   },
-  dot: { position: "absolute", top: 9, right: 10, width: 7, height: 7, borderRadius: 4 },
+  dot: {
+    position: "absolute",
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
   streakBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     paddingHorizontal: 12,
-    height: 42,
-    borderRadius: 21,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
   },
   streakText: { fontSize: 14 },

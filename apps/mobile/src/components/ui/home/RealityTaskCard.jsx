@@ -3,50 +3,124 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
-import { darkColors as colors } from "@/constants/darkTheme";
-import { fonts } from "@/constants/theme";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import { useHomeTheme } from "@/context/ThemeContext";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function RealityTaskCard({ title, description, difficulty, hours, onPress }) {
+export default function RealityTaskCard({
+  title,
+  description,
+  difficulty,
+  hours,
+  onPress,
+}) {
+  const { colors, fonts, isDark } = useHomeTheme();
   const scale = useSharedValue(1);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const bgGradient = isDark
+    ? ["#1E1E24", "#121215"]
+    : ["#FFFFFF", "#F4F4F5"];
 
   return (
     <View style={styles.cardContainer}>
       <LinearGradient
-        colors={["#1E1E24", "#121215"]}
+        colors={bgGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.card}
+        style={[styles.card, { borderColor: colors.divider }]}
       >
-        {/* Glow accent border line at the top */}
-        <View style={styles.topGlowLine} />
+        {/* Glow accent border line at top */}
+        <View
+          style={[styles.topGlowLine, { backgroundColor: colors.accent }]}
+        />
 
-        <View style={styles.badge}>
-          <Ionicons name="sparkles" size={12} color="#FF5722" />
-          <Text style={[styles.badgeText, { fontFamily: fonts.headingBold }]}>
+        <View
+          style={[
+            styles.badge,
+            {
+              backgroundColor: colors.accentSoft || "rgba(255, 87, 34, 0.12)",
+              borderColor: colors.accent,
+            },
+          ]}
+        >
+          <Ionicons name="sparkles" size={12} color={colors.accent} />
+          <Text
+            style={[
+              styles.badgeText,
+              { color: colors.accent, fontFamily: fonts.headingBold },
+            ]}
+          >
             FEATURED REALITY TASK
           </Text>
         </View>
 
-        <Text style={[styles.title, { fontFamily: fonts.headingBold }]} numberOfLines={2}>
+        <Text
+          style={[
+            styles.title,
+            { color: colors.textPrimary, fontFamily: fonts.headingBold },
+          ]}
+          numberOfLines={2}
+        >
           {title}
         </Text>
-        
-        <Text style={[styles.description, { fontFamily: fonts.body }]} numberOfLines={2}>
+
+        <Text
+          style={[
+            styles.description,
+            { color: colors.textMuted, fontFamily: fonts.body },
+          ]}
+          numberOfLines={2}
+        >
           {description}
         </Text>
 
         <View style={styles.metaRow}>
-          <View style={styles.metaChip}>
-            <Ionicons name="flash-outline" size={13} color="#FF5722" />
-            <Text style={[styles.metaText, { fontFamily: fonts.bodyMedium }]}>{difficulty}</Text>
+          <View
+            style={[
+              styles.metaChip,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.divider,
+              },
+            ]}
+          >
+            <Ionicons name="flash-outline" size={13} color={colors.accent} />
+            <Text
+              style={[
+                styles.metaText,
+                { color: colors.textPrimary, fontFamily: fonts.bodyMedium },
+              ]}
+            >
+              {difficulty}
+            </Text>
           </View>
-          <View style={styles.metaChip}>
-            <Ionicons name="time-outline" size={13} color="#A1A1AA" />
-            <Text style={[styles.metaText, { fontFamily: fonts.bodyMedium }]}>{hours}</Text>
+
+          <View
+            style={[
+              styles.metaChip,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.divider,
+              },
+            ]}
+          >
+            <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+            <Text
+              style={[
+                styles.metaText,
+                { color: colors.textMuted, fontFamily: fonts.bodyMedium },
+              ]}
+            >
+              {hours}
+            </Text>
           </View>
         </View>
 
@@ -56,11 +130,13 @@ export default function RealityTaskCard({ title, description, difficulty, hours,
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onPress?.();
           }}
-          onPressIn={() => (scale.value = withSpring(0.97, { damping: 12, stiffness: 200 }))}
+          onPressIn={() =>
+            (scale.value = withSpring(0.97, { damping: 12, stiffness: 200 }))
+          }
           onPressOut={() => (scale.value = withSpring(1))}
         >
           <LinearGradient
-            colors={["#FF5722", "#E64A19"]}
+            colors={[colors.accent || "#FF5722", colors.accent || "#E64A19"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.ctaGradient}
@@ -78,19 +154,18 @@ export default function RealityTaskCard({ title, description, difficulty, hours,
 
 const styles = StyleSheet.create({
   cardContainer: {
-    marginBottom: 16,
+    marginBottom: 8,
     borderRadius: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   card: {
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
     position: "relative",
     overflow: "hidden",
   },
@@ -100,59 +175,51 @@ const styles = StyleSheet.create({
     left: 40,
     right: 40,
     height: 2,
-    backgroundColor: "rgba(255, 87, 34, 0.6)",
     borderRadius: 1,
+    opacity: 0.8,
   },
   badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255, 87, 34, 0.12)",
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 87, 34, 0.25)",
     marginBottom: 14,
   },
   badgeText: {
     fontSize: 10,
-    color: "#FF5722",
     letterSpacing: 0.8,
   },
   title: {
-    fontSize: 22,
-    lineHeight: 28,
-    color: "#FFFFFF",
+    fontSize: 20,
+    lineHeight: 26,
     marginBottom: 8,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   description: {
     fontSize: 13,
     lineHeight: 19,
-    color: "#A1A1AA",
   },
   metaRow: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 18,
+    marginTop: 16,
     marginBottom: 18,
   },
   metaChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
   },
   metaText: {
     fontSize: 12,
-    color: "#E4E4E7",
   },
   cta: {
     borderRadius: 16,
@@ -163,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    height: 50,
+    height: 48,
     borderRadius: 16,
   },
   ctaText: {

@@ -18,40 +18,40 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 export default function Onboarding() {
   const router = useRouter();
-  const setCompletedOnboarding = useAuthStore((state) => state.setCompletedOnboarding);
+  const setCompletedOnboarding = useAuthStore(
+    (state) => state.setCompletedOnboarding
+  );
 
+  // Animations
   const fade = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(35)).current;
-  const scale = useRef(new Animated.Value(0.92)).current;
+  const translateY = useRef(new Animated.Value(25)).current;
+  const scale = useRef(new Animated.Value(0.95)).current;
+  const buttonPressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fade, {
         toValue: 1,
-        duration: 700,
+        duration: 650,
         useNativeDriver: true,
       }),
 
       Animated.spring(scale, {
         toValue: 1,
-        friction: 7,
+        friction: 8,
+        tension: 40,
         useNativeDriver: true,
       }),
 
       Animated.spring(translateY, {
         toValue: 0,
         friction: 8,
+        tension: 45,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  // NOTE: is stage pe user authenticated NAHI hota (signup/login se pehle
-  // hi ye screen aati hai) — isliye ye flag sirf LOCAL rehta hai (AsyncStorage
-  // ke through, zustand persist se). Backend ka hasCompletedOnboarding column
-  // abhi ke liye is screen se sync nahi hoga — agar future mein interest-tags
-  // is screen pe select karwane hain to signup ke baad ek alag sync-step
-  // banana padega, jab token available ho.
   const handleStart = () => {
     setCompletedOnboarding(true);
     router.replace("/signup");
@@ -61,6 +61,28 @@ export default function Onboarding() {
     setCompletedOnboarding(true);
     router.replace("/login");
   };
+
+  // Tactile Button Animations (Press Down Effect)
+  const onPressIn = () => {
+    Animated.spring(buttonPressAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 5,
+    }).start();
+  };
+
+  const onPressOut = () => {
+    Animated.spring(buttonPressAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 5,
+    }).start();
+  };
+
+  const buttonTranslate = buttonPressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 4], // 4px press effect like Duolingo 3D button
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -72,30 +94,30 @@ export default function Onboarding() {
 
       <GradientGlow />
 
-      {/* Logo */}
-      <Animated.Text
+      {/* Header Badge */}
+      <Animated.View style={[styles.headerRow, { opacity: fade }]}>
+        <Text style={styles.logo}>
+          Bey<Text style={{ color: colors.accent }}>ownd</Text>
+        </Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>REAL WORK</Text>
+        </View>
+      </Animated.View>
+
+      {/* Hero Illustration Wrapper */}
+      <Animated.View
         style={[
-          styles.logo,
+          styles.heroWrapper,
           {
             opacity: fade,
+            transform: [{ scale }],
           },
         ]}
-      >
-        Bey
-        <Text style={{ color: colors.accent }}>ownd</Text>
-      </Animated.Text>
-
-      {/* Hero */}
-      <Animated.View
-        style={{
-          opacity: fade,
-          transform: [{ scale }],
-        }}
       >
         <HeroIllustration />
       </Animated.View>
 
-      {/* Text */}
+      {/* Typography */}
       <Animated.View
         style={{
           opacity: fade,
@@ -103,40 +125,41 @@ export default function Onboarding() {
         }}
       >
         <Text style={styles.title}>
-          Stop{" "}
-          <Text style={styles.orange}>
-            consuming.
-          </Text>
+          Stop <Text style={styles.orange}>consuming.</Text>
           {"\n"}
-          Start{" "}
-          <Text style={styles.orange}>
-            building.
-          </Text>
+          Start <Text style={styles.orange}>building.</Text>
+        </Text>
+        <Text style={styles.subtitle}>
+          Turn theory into industry-ready proof of work.
         </Text>
       </Animated.View>
 
       <View style={{ flex: 1 }} />
 
-      {/* CTA */}
-      <Pressable
-        android_ripple={{
-          color: "#3d2b22",
-        }}
-        style={styles.button}
-        onPress={handleStart}
-      >
-        <Text style={styles.buttonText}>
-          Start My Journey →
-        </Text>
-      </Pressable>
+      {/* Tactile 3D Primary Action Button */}
+      <View style={styles.buttonShadowContainer}>
+        <Animated.View
+          style={{
+            transform: [{ translateY: buttonTranslate }],
+          }}
+        >
+          <Pressable
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            onPress={handleStart}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+            <Text style={styles.buttonArrow}>→</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
 
-      <Pressable onPress={handleSignIn}>
+      {/* Secondary Ghost Action */}
+      <Pressable onPress={handleSignIn} style={styles.signinWrapper}>
         <Text style={styles.signin}>
-          Already have an account?
-          <Text style={styles.signAccent}>
-            {" "}
-            Sign In
-          </Text>
+          I already have an account{" "}
+          <Text style={styles.signAccent}>• Sign In</Text>
         </Text>
       </Pressable>
     </SafeAreaView>
@@ -147,22 +170,51 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
+  },
+
+  headerRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   logo: {
-    marginTop: 14,
-    fontSize: 28,
+    fontSize: 26,
     color: colors.textPrimary,
     fontFamily: fonts.headingBold,
+    letterSpacing: -0.5,
+  },
+
+  badge: {
+    backgroundColor: "rgba(0,0,0,0.04)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+
+  badgeText: {
+    fontSize: 9,
+    fontFamily: fonts.headingBold,
+    color: colors.textMuted,
+    letterSpacing: 1.2,
+  },
+
+  heroWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 18,
   },
 
   title: {
-    marginTop: 25,
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 38,
+    lineHeight: 44,
     color: colors.textPrimary,
     fontFamily: fonts.headingBold,
+    letterSpacing: -0.8,
   },
 
   orange: {
@@ -170,45 +222,61 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    marginTop: 18,
-    fontSize: 17,
-    lineHeight: 29,
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
   },
 
+  /* Duolingo-style Tactile 3D Button Setup */
+  buttonShadowContainer: {
+    width: "100%",
+    height: 58,
+    backgroundColor: "#140D0B", // Darker bottom edge for 3D depth
+    borderRadius: 18,
+  },
+
   button: {
-    height: 60,
+    height: 54,
     borderRadius: 18,
     backgroundColor: "#241914",
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    elevation: 10,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
 
   buttonText: {
     color: "#fff",
-    fontSize: 17,
-    fontFamily: fonts.bodyMedium,
+    fontSize: 16,
+    fontFamily: fonts.headingBold,
+    letterSpacing: 0.3,
+  },
+
+  buttonArrow: {
+    color: colors.accent,
+    fontSize: 18,
+    fontFamily: fonts.headingBold,
+    marginLeft: 8,
+  },
+
+  signinWrapper: {
+    paddingVertical: 16,
+    alignItems: "center",
   },
 
   signin: {
-    marginTop: 20,
-    marginBottom: 25,
     textAlign: "center",
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
-    fontSize: 15,
+    fontSize: 14,
   },
 
   signAccent: {
     color: colors.accent,
+    fontFamily: fonts.headingBold,
   },
 });

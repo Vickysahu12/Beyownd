@@ -7,7 +7,15 @@ export default function NoteRowSkeleton() {
   const { colors } = useHomeTheme();
 
   return (
-    <View style={[styles.rowCard, { backgroundColor: colors.surface || "#18181B" }]}>
+    <View
+      style={[
+        styles.rowCard,
+        {
+          backgroundColor: colors.card || colors.surface || "#18181B",
+          borderColor: colors.divider || "transparent",
+        },
+      ]}
+    >
       <Skeleton width={38} height={38} borderRadius={11} />
       <View style={styles.textContainer}>
         <Skeleton width="65%" height={13} style={{ marginBottom: 10 }} />
@@ -26,6 +34,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 20,
     marginBottom: 10,
+    borderWidth: 1,
   },
   textContainer: { flex: 1, paddingRight: 10 },
 });

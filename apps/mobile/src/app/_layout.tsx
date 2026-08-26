@@ -3,11 +3,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts as useSora, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { useFonts as useInter, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
-import { colors } from '@/constants/theme';
-import { HomeThemeProvider } from '@/context/ThemeContext';
 
 import OfflineBanner from '@/components/common/OfflineBanner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { useAuthStore } from '@/store/useAuthStore';
 
 SplashScreen.preventAutoHideAsync();
@@ -43,10 +42,15 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <HomeThemeProvider>
+      <ThemeProvider>
         <OfflineBanner />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#09090B' } }} />
-      </HomeThemeProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#09090B' },
+          }}
+        />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

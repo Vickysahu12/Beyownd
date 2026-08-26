@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -8,31 +8,47 @@ import Animated, {
   withSpring,
   withDelay,
   Easing,
+  interpolate,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/constants/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 
-function SplashIndex() {
+const { width } = Dimensions.get('window');
+
+export default function SplashIndex() {
   const router = useRouter();
 
-  const scale = useSharedValue(0.55);
-  const opacity = useSharedValue(0);
+  // Animation Shared Values
+  const progress = useSharedValue(0);
   const maskWidth = useSharedValue(0);
   const taglineOpacity = useSharedValue(0);
-  const taglineY = useSharedValue(8);
+  const taglineY = useSharedValue(12);
 
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 200 });
-    scale.value = withSpring(1, { damping: 8, stiffness: 140, mass: 0.9 });
+    // 1. Smooth Spring Scale & Entrance
+    progress.value = withSpring(1, {
+      damping: 14,
+      stiffness: 100,
+      mass: 0.8,
+    });
 
+    // 2. Crisp Typographic Mask Reveal
     maskWidth.value = withDelay(
-      120,
-      withTiming(100, { duration: 550, easing: Easing.out(Easing.cubic) })
+      150,
+      withTiming(100, {
+        duration: 700,
+        easing: Easing.bezier(0.16, 1, 0.3, 1), // LingoLift/Apple Smooth Curve
+      })
     );
 
-    taglineOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
-    taglineY.value = withDelay(700, withTiming(0, { duration: 400 }));
+    // 3. Tagline Fade & Float Up
+    taglineOpacity.value = withDelay(650, withTiming(1, { duration: 400 }));
+    taglineY.value = withDelay(
+      650,
+      withSpring(0, { damping: 12, stiffness: 120 })
+    );
 
+    // 4. Navigation Logic (Kept intact)
     const timer = setTimeout(() => {
       const { isAuthenticated, hasCompletedOnboarding } = useAuthStore.getState();
 
@@ -43,15 +59,20 @@ function SplashIndex() {
       } else {
         router.replace('/(tabs)/home');
       }
-    }, 2200);
+    }, 2400);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
-  }));
+  // Logo Animation Style (Scale + Subtle Y-translation for cinematic feel)
+  const logoStyle = useAnimatedStyle(() => {
+    const scale = interpolate(progress.value, [0, 1], [0.85, 1]);
+    const translateY = interpolate(progress.value, [0, 1], [15, 0]);
+    return {
+      opacity: progress.value,
+      transform: [{ scale }, { translateY }],
+    };
+  });
 
   const maskStyle = useAnimatedStyle(() => ({
     width: `${maskWidth.value}%`,
@@ -64,17 +85,23 @@ function SplashIndex() {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={logoStyle}>
+      {/* Subtle Background Glow Effect */}
+      
+      {/* Main Logo Container */}
+      <Animated.View style={[styles.logoWrapper, logoStyle]}>
         <View style={styles.maskWrap}>
           <Animated.View style={[styles.maskReveal, maskStyle]}>
-            <Text style={styles.logo}>Beyownd</Text>
+            <Text style={styles.logo}>
+              Beyownd<Text style={styles.accentDot}>.</Text>
+            </Text>
           </Animated.View>
         </View>
       </Animated.View>
 
-      <Animated.Text style={[styles.tagline, taglineStyle]}>
-        REAL WORK. REAL READINESS.
-      </Animated.Text>
+      {/* Tagline Pill */}
+      <Animated.View style={[styles.taglinePill, taglineStyle]}>
+        <Text style={styles.tagline}>REAL WORK • REAL READINESS</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -84,23 +111,48 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bg,
+    backgroundColor: colors.bg || '#0B1317',
+    position: 'relative',
   },
-  maskWrap: { overflow: 'hidden' },
-  maskReveal: { overflow: 'hidden' },
+  logoWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maskWrap: {
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  maskReveal: {
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+  },
   logo: {
-    fontFamily: fonts.displayHeavy,
-    fontSize: 56,
-    color: colors.textPrimary,
-    letterSpacing: -1.2,
+    fontFamily: fonts.displayHeavy || 'System',
+    fontSize: 58,
+    fontWeight: '900',
+    color: colors.textPrimary || '#FFFFFF',
+    letterSpacing: -1.8,
+    textShadowColor: 'rgba(255, 255, 255, 0.15)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
+  },
+  accentDot: {
+    color: colors.primary || '#58CC02',
+  },
+  taglinePill: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   tagline: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 16,
-    letterSpacing: 2.5,
+    fontFamily: fonts.bodyMedium || 'System',
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textMuted || '#9CA3AF',
+    letterSpacing: 2.8,
   },
 });
-
-export default SplashIndex;

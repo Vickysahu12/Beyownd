@@ -15,16 +15,14 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { useHomeTheme } from "@/context/ThemeContext";
-// 1. Auth Store import kiya
+import { HomeThemeProvider, useHomeTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/store/useAuthStore";
 
-export default function SettingsScreen() {
+function SettingsContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, fonts, isDark, toggleTheme } = useHomeTheme();
 
-  // 2. Logout function store se nikala
   const logout = useAuthStore((state) => state.logout);
 
   // Settings State
@@ -49,9 +47,7 @@ export default function SettingsScreen() {
           text: "Log Out",
           style: "destructive",
           onPress: () => {
-            // 3. Pehle store clear (isAuthenticated: false & token wipe)
             logout();
-            // 4. Login screen par redirect
             router.replace("/login");
           },
         },
@@ -59,7 +55,6 @@ export default function SettingsScreen() {
     );
   };
 
-  // Helper render component for row items
   const renderSettingItem = ({
     icon,
     iconBg = colors.surface,
@@ -344,6 +339,14 @@ export default function SettingsScreen() {
         </Text>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+export default function SettingsScreen() {
+  return (
+    <HomeThemeProvider>
+      <SettingsContent />
+    </HomeThemeProvider>
   );
 }
 

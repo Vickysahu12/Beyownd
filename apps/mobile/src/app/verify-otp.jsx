@@ -1,41 +1,114 @@
-import React, { useState } from "react";
-import { Text, View, StyleSheet } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  TextInput,
+  Dimensions,
+  Animated,
+  Pressable,
+  Platform,
+  Keyboard,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import AuthScreenLayout from "@/components/ui/auth/AuthScreenLayout";
-import AuthInput from "@/components/ui/auth/AnimatedInput";
-import PrimaryButton from "@/components/ui/auth/PrimaryButton";
 import { fonts, colors } from "@/constants/theme";
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiClient } from "@/api/client";
+
+const { width } = Dimensions.get("window");
+
+const PRIMARY_COLOR = colors.accent || "#58CC02";
+const TEXT_MUTED = colors.textMuted || "#9CA3AF";
 
 export default function VerifyOtp() {
   const router = useRouter();
   const { email } = useLocalSearchParams();
   const login = useAuthStore((state) => state.login);
 
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleVerify = async () => {
-    if (!otp.trim() || otp.trim().length !== 6) {
-      setError("Enter the 6-digit code sent to your email");
+  const inputRefs = useRef([]);
+  const buttonPressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRefs.current[0]?.focus();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleTextChange = (text, index) => {
+    if (loading) return;
+    setError("");
+
+    if (text.length > 1) {
+      const pasteOtp = text.slice(0, 6).split("");
+      const newOtp = [...otp];
+      pasteOtp.forEach((char, i) => {
+        newOtp[i] = char;
+      });
+      setOtp(newOtp);
+      inputRefs.current[5]?.focus();
       return;
     }
+
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    if (text && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e, index) => {
+    if (loading) return;
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const getFullOtp = () => otp.join("");
+
+  const handleVerify = async () => {
+    Keyboard.dismiss();
+
+    const combinedOtp = getFullOtp();
+
+    if (combinedOtp.length !== 6) {
+      setError("Please enter the 6-digit code");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+
     setError("");
     setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const startTime = Date.now();
 
     try {
       const { data } = await apiClient.post("/auth/verify-otp", {
         email,
-        otp: otp.trim(),
+        otp: combinedOtp,
       });
 
       const { user, accessToken, refreshToken } = data.data;
 
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 600) {
+        await new Promise((resolve) => setTimeout(resolve, 600 - elapsed));
+      }
+
       login(user, accessToken, refreshToken);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       if (!user.hasCompletedProfileSetup) {
         router.replace("/Profile-setup");
@@ -48,11 +121,36 @@ export default function VerifyOtp() {
       const message =
         err.response?.data?.message || "Invalid or expired code. Try again.";
       setError(message);
-      console.error("OTP verification failed:", err.response?.data || err.message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      console.error(
+        "OTP verification failed:",
+        err.response?.data || err.message
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  const onPressIn = () => {
+    Animated.spring(buttonPressAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 5,
+    }).start();
+  };
+
+  const onPressOut = () => {
+    Animated.spring(buttonPressAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 5,
+    }).start();
+  };
+
+  const buttonTranslate = buttonPressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 4],
+  });
 
   return (
     <AuthScreenLayout
@@ -60,34 +158,187 @@ export default function VerifyOtp() {
       title="Verify your email"
       subtitle={`Enter the 6-digit code sent to ${email || "your email"}`}
     >
-      <AuthInput
-        icon="keypad-outline"
-        label="6-digit code"
-        value={otp}
-        onChangeText={setOtp}
-        keyboardType="number-pad"
-        maxLength={6}
-        error={error}
-      />
+      <View style={styles.contentContainer}>
+        <View style={styles.otpLabelGroup}>
+          <Ionicons
+            name="mail-open-outline"
+            size={16}
+            color={error ? colors.danger : colors.textPrimary}
+          />
+          <Text
+            style={[styles.otpLabel, error ? { color: colors.danger } : {}]}
+          >
+            Verification Code
+          </Text>
+        </View>
 
-      <PrimaryButton
-        label={loading ? "Verifying..." : "Verify"}
-        onPress={handleVerify}
-        disabled={loading}
-      />
+        <View style={styles.otpCellsContainer}>
+          {otp.map((digit, index) => (
+            <TextInput
+              key={index}
+              ref={(ref) => (inputRefs.current[index] = ref)}
+              style={[
+                styles.otpCell,
+                digit ? styles.otpCellFilled : {},
+                error ? styles.otpCellError : {},
+                loading ? styles.otpCellDisabled : {},
+                index === 2 ? { marginRight: 20 } : { marginRight: 8 },
+              ]}
+              value={digit}
+              onChangeText={(text) => handleTextChange(text, index)}
+              onKeyPress={(e) => handleKeyPress(e, index)}
+              keyboardType="number-pad"
+              maxLength={2}
+              selectTextOnFocus
+              cursorColor={PRIMARY_COLOR}
+              contextMenuHidden
+              editable={!loading}
+            />
+          ))}
+        </View>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>Didn't get the code? </Text>
-        <Text style={styles.footerLink} onPress={() => router.replace("/signup")}>
-          Try signing up again
-        </Text>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={14} color={colors.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        <View style={{ height: 32 }} />
+
+        <View style={styles.buttonShadowContainer}>
+          <Animated.View
+            style={{ transform: [{ translateY: buttonTranslate }] }}
+          >
+            <Pressable
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+              onPress={handleVerify}
+              disabled={loading}
+              style={[styles.button3D, loading ? styles.buttonDisabled : {}]}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "VERIFYING..." : "VERIFY"}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </View>
+
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Didn't get the code? </Text>
+          <Text
+            style={styles.footerLink}
+            onPress={() => !loading && router.replace("/signup")}
+          >
+            Try signing up again
+          </Text>
+        </View>
       </View>
     </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  footerRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", flexWrap: "wrap", marginTop: 16 },
-  footerText: { fontFamily: fonts.body, fontSize: 13, color: colors.textMuted },
-  footerLink: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.accent },
+  contentContainer: {
+    paddingTop: 12,
+  },
+  otpLabelGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+    paddingLeft: 4,
+  },
+  otpLabel: {
+    fontFamily: fonts.bodyMedium || "System",
+    fontSize: 13,
+    color: colors.textPrimary || "#FFFFFF",
+    letterSpacing: 0.2,
+  },
+  otpCellsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  otpCell: {
+    width: (width - 110) / 6,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.08)",
+    fontFamily: fonts.headingBold || "System",
+    fontSize: 24,
+    color: colors.textPrimary || "#FFFFFF",
+    textAlign: "center",
+    paddingTop: Platform.OS === "ios" ? 4 : 0,
+  },
+  otpCellFilled: {
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderColor: PRIMARY_COLOR,
+  },
+  otpCellError: {
+    borderColor: colors.danger || "#EF4444",
+  },
+  otpCellDisabled: {
+    opacity: 0.5,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingLeft: 4,
+    marginTop: 6,
+  },
+  errorText: {
+    fontFamily: fonts.body || "System",
+    fontSize: 12,
+    color: colors.danger || "#EF4444",
+  },
+  buttonShadowContainer: {
+    width: "100%",
+    height: 58,
+    backgroundColor: "#121A03",
+    borderRadius: 18,
+  },
+  button3D: {
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: PRIMARY_COLOR,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
+  },
+  buttonDisabled: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    opacity: 0.6,
+    borderWidth: 0,
+  },
+  buttonText: {
+    color: "#000000",
+    fontSize: 16,
+    fontFamily: fonts.headingBold || "System",
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 22,
+  },
+  footerText: {
+    fontFamily: fonts.body || "System",
+    fontSize: 13,
+    color: TEXT_MUTED,
+  },
+  footerLink: {
+    fontFamily: fonts.headingSemi || fonts.bodyMedium || "System",
+    fontSize: 13,
+    color: PRIMARY_COLOR,
+    fontWeight: "700",
+  },
 });
