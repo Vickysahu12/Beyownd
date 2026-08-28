@@ -12,13 +12,12 @@ export default function NoteCard({ icon, color = "accent", title, progress = 0, 
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
-  // Dynamic Theme Colors Fallback Handling
-  const cardBg = colors?.[`${color}Soft`] || colors?.cardDark || "rgba(255, 255, 255, 0.05)";
-  const mainColor = colors?.[color] || colors?.accent || "#FF5722";
+  const cardBg = colors?.[`${color}Soft`] || colors.accentSoft;
+  const mainColor = colors?.[color] || colors.accent;
 
   return (
     <AnimatedPressable
-      style={[styles.card, { backgroundColor: cardBg }, style]}
+      style={[styles.card, { backgroundColor: cardBg, borderColor: colors.divider }, style]}
       onPress={() => {
         Haptics.selectionAsync();
         onPress?.();
@@ -38,7 +37,7 @@ export default function NoteCard({ icon, color = "accent", title, progress = 0, 
       </Text>
 
       <View style={styles.progressRow}>
-        <View style={styles.track}>
+        <View style={[styles.track, { backgroundColor: colors.card }]}>
           <View style={[styles.fill, { width: `${progress}%`, backgroundColor: mainColor }]} />
         </View>
         <Text style={[styles.percent, { color: mainColor, fontFamily: fonts.bodyMedium }]}>
@@ -51,10 +50,11 @@ export default function NoteCard({ icon, color = "accent", title, progress = 0, 
 
 const styles = StyleSheet.create({
   card: {
-    width: 148,
+    width: 152,
     borderRadius: 18,
     padding: 14,
     marginRight: 12,
+    borderWidth: 1,
   },
   top: {
     flexDirection: "row",
@@ -83,7 +83,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.08)",
     overflow: "hidden",
   },
   fill: {

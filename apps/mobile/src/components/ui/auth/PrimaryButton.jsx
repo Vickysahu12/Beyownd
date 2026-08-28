@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { Pressable } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { fonts } from "@/constants/theme";
+import { colors, fonts } from "@/constants/theme";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -25,7 +25,7 @@ export default function AuthButton({ label, onPress, loading = false, disabled =
       onPressOut={() => (scale.value = withSpring(1))}
     >
       <LinearGradient
-        colors={["#8F6BFF", "#7C5CFF"]}
+        colors={["#1E3527", colors.accent]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.button}
@@ -46,14 +46,14 @@ export default function AuthButton({ label, onPress, loading = false, disabled =
 const styles = StyleSheet.create({
   button: {
     height: 58,
-    borderRadius: 20,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#7C5CFF",
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
   },
   content: { flexDirection: "row", alignItems: "center", gap: 8 },
   label: { fontSize: 16, color: "#fff", fontFamily: fonts.bodyMedium, letterSpacing: -0.2 },

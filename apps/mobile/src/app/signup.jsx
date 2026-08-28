@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View, StyleSheet, Keyboard } from "react-native";
+import { Text, View, StyleSheet, Keyboard, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 
@@ -21,6 +21,7 @@ export default function Signup() {
   const [referralCode, setReferralCode] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
   const handleSignup = async () => {
     Keyboard.dismiss();
@@ -84,6 +85,7 @@ export default function Signup() {
       image={require("@/assets/image/onboarding.png")}
       title="Create account"
       subtitle="Start your journey with Beyownd"
+      compact
       footer={
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>Already have an account? </Text>
@@ -136,22 +138,29 @@ export default function Signup() {
         editable={!loading}
       />
 
-      <AuthInput
-        icon="school-outline"
-        label="College (optional)"
-        value={college}
-        onChangeText={setCollege}
-        editable={!loading}
-      />
-
-      <AuthInput
-        icon="gift-outline"
-        label="Referral Code (optional)"
-        value={referralCode}
-        onChangeText={setReferralCode}
-        autoCapitalize="characters"
-        editable={!loading}
-      />
+      {!showMore ? (
+        <Pressable onPress={() => setShowMore(true)} style={styles.moreToggle} hitSlop={8}>
+          <Text style={styles.moreToggleText}>+ Add college or referral code (optional)</Text>
+        </Pressable>
+      ) : (
+        <>
+          <AuthInput
+            icon="school-outline"
+            label="College (optional)"
+            value={college}
+            onChangeText={setCollege}
+            editable={!loading}
+          />
+          <AuthInput
+            icon="gift-outline"
+            label="Referral Code (optional)"
+            value={referralCode}
+            onChangeText={setReferralCode}
+            autoCapitalize="characters"
+            editable={!loading}
+          />
+        </>
+      )}
 
       <PrimaryButton
         label={loading ? "Creating account..." : "Create account"}
@@ -187,6 +196,16 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
     color: colors.accent,
+  },
+  moreToggle: {
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    marginTop: -2,
+  },
+  moreToggleText: {
+    fontSize: 13,
+    color: colors.accent,
+    fontFamily: fonts.bodyMedium,
   },
   dividerRow: {
     flexDirection: "row",

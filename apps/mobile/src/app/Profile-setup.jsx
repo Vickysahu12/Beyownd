@@ -91,10 +91,7 @@ export default function ProfileSetup() {
 
   const router = useRouter();
 
-
-
   const [answers, setAnswers] = useState({});
-
   const [loading, setLoading] = useState(false);
 
 

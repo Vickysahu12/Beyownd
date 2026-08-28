@@ -1,21 +1,21 @@
 export const colors = {
-  bg: "#FBF6F0",
+  bg: "#F8F7F4",
   card: "#FFFFFF",
   surface: "#FFFFFF",
 
-  accent: "#FF6A2A",
-  accentSoft: "#FFE8D7",
+  accent: "#16281E",
+  accentSoft: "#E4EAE6",
 
-  border: "#ECE3DA",
-  borderFocus: "#FF6A2A",
+  border: "#E9E5DE",
+  borderFocus: "#16281E",
 
   danger: "#E14545",
 
-  textPrimary: "#201814",
-  textMuted: "#706862",
+  textPrimary: "#1A1A17",
+  textMuted: "#79766F",
 
-  divider: "#ECE3DA",
-  shadow: "rgba(0,0,0,.08)",
+  divider: "#E9E5DE",
+  shadow: "rgba(22,40,30,0.10)",
 
   success: "#3AA655",
   successSoft: "#E3F5E7",

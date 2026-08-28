@@ -11,8 +11,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-// Updated Hook
-import { useAppTheme } from "@/context/ThemeContext";
+import { useHomeTheme } from "@/context/ThemeContext";
 
 export default function HomeHeader({
   name,
@@ -23,7 +22,7 @@ export default function HomeHeader({
   onToggleTheme,
   onNotificationPress,
 }) {
-  const { colors, fonts } = useAppTheme();
+  const { colors, fonts } = useHomeTheme();
 
   const dotOpacity = useSharedValue(1);
   const bellScale = useSharedValue(1);
@@ -57,10 +56,9 @@ export default function HomeHeader({
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <Image
-          source={avatar}
-          style={[styles.avatar, { backgroundColor: colors.accentSoft }]}
-        />
+        <View style={[styles.avatarRing, { borderColor: colors.accentSoft }]}>
+          <Image source={avatar} style={styles.avatar} />
+        </View>
         <View>
           <Text
             style={[
@@ -82,7 +80,6 @@ export default function HomeHeader({
       </View>
 
       <View style={styles.actions}>
-        {/* Bell Action */}
         <Animated.View style={bellStyle}>
           <Pressable
             style={[
@@ -114,7 +111,6 @@ export default function HomeHeader({
           </Pressable>
         </Animated.View>
 
-        {/* Theme Action */}
         <Animated.View style={themeStyle}>
           <Pressable
             style={[
@@ -138,12 +134,11 @@ export default function HomeHeader({
           </Pressable>
         </Animated.View>
 
-        {/* Streak Badge */}
         <Animated.View style={streakStyle}>
           <Pressable
             style={[
               styles.streakBadge,
-              { backgroundColor: colors.card, borderColor: colors.divider },
+              { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
             ]}
             onPress={() => {
               Haptics.selectionAsync();
@@ -156,7 +151,7 @@ export default function HomeHeader({
             <Text
               style={[
                 styles.streakText,
-                { color: colors.textPrimary, fontFamily: fonts.bodyMedium },
+                { color: colors.accent, fontFamily: fonts.bodyMedium },
               ]}
             >
               {streak}
@@ -175,7 +170,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   left: { flexDirection: "row", flex: 1, gap: 12, alignItems: "center" },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
+  avatarRing: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
   greeting: { fontSize: 13 },
   name: { fontSize: 18, marginTop: 1 },
   actions: { flexDirection: "row", gap: 8, alignItems: "center" },
@@ -204,5 +207,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  streakText: { fontSize: 14 },
+  streakText: { fontSize: 14, fontWeight: "700" },
 });

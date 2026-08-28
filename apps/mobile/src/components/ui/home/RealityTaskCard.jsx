@@ -19,36 +19,21 @@ export default function RealityTaskCard({
   hours,
   onPress,
 }) {
-  const { colors, fonts, isDark } = useHomeTheme();
+  const { colors, fonts } = useHomeTheme();
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const bgGradient = isDark
-    ? ["#1E1E24", "#121215"]
-    : ["#FFFFFF", "#F4F4F5"];
-
   return (
     <View style={styles.cardContainer}>
-      <LinearGradient
-        colors={bgGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.card, { borderColor: colors.divider }]}
-      >
-        {/* Glow accent border line at top */}
-        <View
-          style={[styles.topGlowLine, { backgroundColor: colors.accent }]}
-        />
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+        <View style={[styles.topGlowLine, { backgroundColor: colors.accent }]} />
 
         <View
           style={[
             styles.badge,
-            {
-              backgroundColor: colors.accentSoft || "rgba(255, 87, 34, 0.12)",
-              borderColor: colors.accent,
-            },
+            { backgroundColor: colors.accentSoft, borderColor: colors.accentSoft },
           ]}
         >
           <Ionicons name="sparkles" size={12} color={colors.accent} />
@@ -83,42 +68,16 @@ export default function RealityTaskCard({
         </Text>
 
         <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.metaChip,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
+          <View style={[styles.metaChip, { backgroundColor: colors.bg, borderColor: colors.divider }]}>
             <Ionicons name="flash-outline" size={13} color={colors.accent} />
-            <Text
-              style={[
-                styles.metaText,
-                { color: colors.textPrimary, fontFamily: fonts.bodyMedium },
-              ]}
-            >
+            <Text style={[styles.metaText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>
               {difficulty}
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.metaChip,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
+          <View style={[styles.metaChip, { backgroundColor: colors.bg, borderColor: colors.divider }]}>
             <Ionicons name="time-outline" size={13} color={colors.textMuted} />
-            <Text
-              style={[
-                styles.metaText,
-                { color: colors.textMuted, fontFamily: fonts.bodyMedium },
-              ]}
-            >
+            <Text style={[styles.metaText, { color: colors.textMuted, fontFamily: fonts.bodyMedium }]}>
               {hours}
             </Text>
           </View>
@@ -136,7 +95,7 @@ export default function RealityTaskCard({
           onPressOut={() => (scale.value = withSpring(1))}
         >
           <LinearGradient
-            colors={[colors.accent || "#FF5722", colors.accent || "#E64A19"]}
+            colors={["#1E3527", colors.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.ctaGradient}
@@ -147,7 +106,7 @@ export default function RealityTaskCard({
             <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
           </LinearGradient>
         </AnimatedPressable>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -157,10 +116,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
   },
   card: {
     borderRadius: 24,

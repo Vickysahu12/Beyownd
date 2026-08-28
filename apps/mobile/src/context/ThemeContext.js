@@ -3,34 +3,42 @@ import React, { createContext, useContext, useState } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   const toggleTheme = () => setIsDark((prev) => !prev);
 
   const colors = isDark
     ? {
-        bg: "#09090B",
-        surface: "#18181B",
+        bg: "#0E1512",
+        surface: "#16211C",
         border: "rgba(255,255,255,0.08)",
         divider: "rgba(255,255,255,0.08)",
-        card: "#18181B",
+        card: "#16211C",
         textPrimary: "#FFFFFF",
-        textMuted: "#A1A1AA",
-        accent: "#FF5722",
-        accentSoft: "rgba(255,87,34,0.15)",
+        textMuted: "#9CA69E",
+        accent: "#3DDC84",
+        accentSoft: "rgba(61,220,132,0.15)",
         danger: "#EF4444",
+        success: "#3AA655",
+        successSoft: "rgba(58,166,85,0.15)",
+        info: "#3B82F6",
+        pro: "#8B5CF6",
       }
     : {
-        bg: "#FAF9F6", // Clean Off-White Premium Look
+        bg: "#F8F7F4",
         surface: "#FFFFFF",
-        border: "rgba(0,0,0,0.06)",
-        divider: "rgba(0,0,0,0.06)",
+        border: "#E9E5DE",
+        divider: "#E9E5DE",
         card: "#FFFFFF",
-        textPrimary: "#18181B",
-        textMuted: "#71717A",
-        accent: "#FF5722",
-        accentSoft: "rgba(255,87,34,0.1)",
+        textPrimary: "#1A1A17",
+        textMuted: "#79766F",
+        accent: "#16281E",
+        accentSoft: "#E4EAE6",
         danger: "#EF4444",
+        success: "#3AA655",
+        successSoft: "#E3F5E7",
+        info: "#3B82F6",
+        pro: "#8B5CF6",
       };
 
   const fonts = {
@@ -47,9 +55,6 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
-// Main Export
 export const useAppTheme = () => useContext(ThemeContext);
-
-// Backwards Compatibility Aliases
 export const useHomeTheme = useAppTheme;
 export const HomeThemeProvider = ThemeProvider;

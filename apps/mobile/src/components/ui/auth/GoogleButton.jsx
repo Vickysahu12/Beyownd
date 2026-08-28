@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -38,76 +32,34 @@ export default function GoogleButton({ onPress }) {
           source={require("@/assets/image/google.png")}
           style={styles.logo}
         />
-
-        <Text style={styles.text}>
-          Continue with Google
-        </Text>
+        <Text style={styles.text}>Continue with Google</Text>
       </View>
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-
   button: {
-
     height: 58,
-
-    marginTop: 18,
-
-    borderRadius: 20,
-
-    backgroundColor: "#FFFFFF",
-
+    marginTop: 16,
+    borderRadius: 18,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: "#ECE7E2",
-
+    borderColor: colors.border,
     paddingHorizontal: 18,
-
     justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    elevation: 5,
-
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
-
   left: {
-
     flexDirection: "row",
-
     alignItems: "center",
-
     justifyContent: "center",
-
     gap: 12,
-
   },
-
-  logo: {
-
-    width: 22,
-
-    height: 22,
-
-    resizeMode: "contain",
-
-  },
-
-  text: {
-
-    fontSize: 15,
-
-    color: colors.textPrimary,
-
-    fontFamily: fonts.bodyMedium,
-
-  },
-
+  logo: { width: 22, height: 22, resizeMode: "contain" },
+  text: { fontSize: 15, color: colors.textPrimary, fontFamily: fonts.bodyMedium },
 });

@@ -21,6 +21,7 @@ export default function AuthInput({
   keyboardType = "default",
   autoCapitalize = "sentences",
   error,
+  editable = true,
 }) {
   const [hidden, setHidden] = useState(secureTextEntry);
   const focus = useSharedValue(0);
@@ -94,6 +95,7 @@ export default function AuthInput({
             autoCapitalize={autoCapitalize}
             placeholderTextColor={colors.textMuted}
             selectionColor={colors.accent}
+            editable={editable}
             onFocus={() => {
               focus.value = withTiming(1, { duration: 160 });
               Haptics.selectionAsync();
@@ -129,15 +131,15 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     borderRadius: 18,
-    borderWidth: 1.5,
-    marginBottom: 16,
+    borderWidth: 1.25,
+    marginBottom: 14,
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 10,
+    paddingTop: 6,
+    paddingBottom: 12,
   },
   row: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   label: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
   },
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontFamily: fonts.body,
     paddingVertical: 4,
-    marginTop: 2,
+    marginTop: 3,
   },
   error: {
     fontSize: 12,

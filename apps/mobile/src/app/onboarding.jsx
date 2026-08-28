@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 import HeroIllustration from "@/components/ui/onboarding/HeroIllustration";
 import GradientGlow from "@/components/ui/onboarding/GradientGlow";
@@ -22,7 +23,6 @@ export default function Onboarding() {
     (state) => state.setCompletedOnboarding
   );
 
-  // Animations
   const fade = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(25)).current;
   const scale = useRef(new Animated.Value(0.95)).current;
@@ -35,14 +35,12 @@ export default function Onboarding() {
         duration: 650,
         useNativeDriver: true,
       }),
-
       Animated.spring(scale, {
         toValue: 1,
         friction: 8,
         tension: 40,
         useNativeDriver: true,
       }),
-
       Animated.spring(translateY, {
         toValue: 0,
         friction: 8,
@@ -53,6 +51,7 @@ export default function Onboarding() {
   }, []);
 
   const handleStart = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCompletedOnboarding(true);
     router.replace("/signup");
   };
@@ -62,7 +61,6 @@ export default function Onboarding() {
     router.replace("/login");
   };
 
-  // Tactile Button Animations (Press Down Effect)
   const onPressIn = () => {
     Animated.spring(buttonPressAnim, {
       toValue: 1,
@@ -81,7 +79,7 @@ export default function Onboarding() {
 
   const buttonTranslate = buttonPressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 4], // 4px press effect like Duolingo 3D button
+    outputRange: [0, 4],
   });
 
   return (
@@ -94,7 +92,6 @@ export default function Onboarding() {
 
       <GradientGlow />
 
-      {/* Header Badge */}
       <Animated.View style={[styles.headerRow, { opacity: fade }]}>
         <Text style={styles.logo}>
           Bey<Text style={{ color: colors.accent }}>ownd</Text>
@@ -104,7 +101,6 @@ export default function Onboarding() {
         </View>
       </Animated.View>
 
-      {/* Hero Illustration Wrapper */}
       <Animated.View
         style={[
           styles.heroWrapper,
@@ -117,7 +113,6 @@ export default function Onboarding() {
         <HeroIllustration />
       </Animated.View>
 
-      {/* Typography */}
       <Animated.View
         style={{
           opacity: fade,
@@ -125,9 +120,9 @@ export default function Onboarding() {
         }}
       >
         <Text style={styles.title}>
-          Stop <Text style={styles.orange}>consuming.</Text>
+          Stop <Text style={styles.accentText}>consuming.</Text>
           {"\n"}
-          Start <Text style={styles.orange}>building.</Text>
+          Start <Text style={styles.accentText}>building.</Text>
         </Text>
         <Text style={styles.subtitle}>
           Turn theory into industry-ready proof of work.
@@ -136,7 +131,6 @@ export default function Onboarding() {
 
       <View style={{ flex: 1 }} />
 
-      {/* Tactile 3D Primary Action Button */}
       <View style={styles.buttonShadowContainer}>
         <Animated.View
           style={{
@@ -155,7 +149,6 @@ export default function Onboarding() {
         </Animated.View>
       </View>
 
-      {/* Secondary Ghost Action */}
       <Pressable onPress={handleSignIn} style={styles.signinWrapper}>
         <Text style={styles.signin}>
           I already have an account{" "}
@@ -172,21 +165,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: 24,
   },
-
   headerRow: {
     marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-
   logo: {
     fontSize: 26,
     color: colors.textPrimary,
     fontFamily: fonts.headingBold,
     letterSpacing: -0.5,
   },
-
   badge: {
     backgroundColor: "rgba(0,0,0,0.04)",
     paddingHorizontal: 10,
@@ -195,20 +185,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.06)",
   },
-
   badgeText: {
     fontSize: 9,
     fontFamily: fonts.headingBold,
     color: colors.textMuted,
     letterSpacing: 1.2,
   },
-
   heroWrapper: {
     alignItems: "center",
     justifyContent: "center",
     marginVertical: 18,
   },
-
   title: {
     fontSize: 38,
     lineHeight: 44,
@@ -216,11 +203,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headingBold,
     letterSpacing: -0.8,
   },
-
-  orange: {
+  accentText: {
     color: colors.accent,
   },
-
   subtitle: {
     marginTop: 10,
     fontSize: 15,
@@ -228,19 +213,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
   },
-
-  /* Duolingo-style Tactile 3D Button Setup */
   buttonShadowContainer: {
     width: "100%",
     height: 58,
-    backgroundColor: "#140D0B", // Darker bottom edge for 3D depth
+    backgroundColor: colors.taskDarkAlt,
     borderRadius: 18,
   },
-
   button: {
     height: 54,
     borderRadius: 18,
-    backgroundColor: "#241914",
+    backgroundColor: colors.accent,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -248,33 +230,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
-
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontFamily: fonts.headingBold,
     letterSpacing: 0.3,
   },
-
   buttonArrow: {
-    color: colors.accent,
+    color: "#fff",
     fontSize: 18,
     fontFamily: fonts.headingBold,
     marginLeft: 8,
+    opacity: 0.85,
   },
-
   signinWrapper: {
     paddingVertical: 16,
     alignItems: "center",
   },
-
   signin: {
     textAlign: "center",
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
   },
-
   signAccent: {
     color: colors.accent,
     fontFamily: fonts.headingBold,

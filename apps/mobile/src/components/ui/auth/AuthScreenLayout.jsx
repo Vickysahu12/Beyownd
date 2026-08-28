@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,7 +10,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 
 import AuthHeader from "./AuthHeader";
 import { colors } from "@/constants/theme";
@@ -24,6 +23,7 @@ export default function AuthScreenLayout({
   subtitle,
   children,
   footer,
+  compact = false,
 }) {
   const router = useRouter();
 
@@ -38,17 +38,16 @@ export default function AuthScreenLayout({
           contentContainerStyle={styles.scroll}
         >
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
           </Pressable>
 
-          <Animated.View
-            style={styles.center}
-          >
+          <Animated.View style={styles.center}>
             <AuthHeader
               icon={icon}
               image={image}
               title={title}
               subtitle={subtitle}
+              compact={compact}
             />
 
             <View>{children}</View>
@@ -68,19 +67,27 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: 26,
+    paddingHorizontal: 24,
     paddingBottom: 32,
     paddingTop: 8,
   },
   back: {
-    marginBottom: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
   center: {
     flex: 1,
     justifyContent: "center",
   },
   footer: {
-    marginTop: 18,
+    marginTop: 16,
     alignItems: "center",
   },
 });

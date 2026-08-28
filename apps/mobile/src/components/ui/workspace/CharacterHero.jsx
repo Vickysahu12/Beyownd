@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View, Dimensions } from "react-native";
 
 import Animated, {
   Easing,
@@ -15,6 +15,14 @@ import { colors } from "@/constants/theme";
 import Character from "@/assets/image/profileSetup.png";
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
+
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+// Chhote screens (<700px height) pe hero ko compact rakhte hain
+const IS_SMALL_SCREEN = SCREEN_HEIGHT < 700;
+
+const HERO_SIZE = IS_SMALL_SCREEN ? 220 : 300;
+const GLOW_SIZE = IS_SMALL_SCREEN ? 180 : 240;
+const CONTAINER_HEIGHT = IS_SMALL_SCREEN ? 240 : 320;
 
 export default function CharacterHero() {
   const floatY = useSharedValue(0);
@@ -65,8 +73,6 @@ export default function CharacterHero() {
     <View style={styles.container}>
       <Animated.View style={[styles.glow, glowStyle]} />
 
-      <View style={styles.shadow} />
-
       <AnimatedImage
         source={Character}
         resizeMode="contain"
@@ -80,22 +86,19 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
-    marginBottom: 20,
-    height: 340,
+    height: CONTAINER_HEIGHT,
   },
 
   glow: {
     position: "absolute",
-    width: 260,
-    height: 260,
+    width: GLOW_SIZE,
+    height: GLOW_SIZE,
     borderRadius: 999,
     backgroundColor: colors.accent,
   },
 
   image: {
-    width: 340,
-    height: 340,
-    marginTop:20
+    width: HERO_SIZE,
+    height: HERO_SIZE,
   },
 });

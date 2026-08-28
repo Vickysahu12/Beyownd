@@ -115,6 +115,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   headerRow: {
     flexDirection: "row",
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
   body: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 18,
   },
   ringWrap: {
     width: SIZE,
