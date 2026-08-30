@@ -10,13 +10,25 @@ export default function InviteCard() {
   const { colors, fonts } = useHomeTheme();
   const [referral, setReferral] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiClient
       .get("/users/referrals")
       .then(({ data }) => setReferral(data.data))
-      .catch((err) => console.error("Referral fetch failed:", err.response?.data || err.message));
+      .catch((err) => console.error("Referral fetch failed:", err.response?.data || err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+        <View style={[styles.skeletonLine, { backgroundColor: colors.divider, width: "50%" }]} />
+        <View style={[styles.skeletonLine, { backgroundColor: colors.divider, width: "75%", marginTop: 8 }]} />
+        <View style={[styles.skeletonLine, { backgroundColor: colors.divider, height: 44, marginTop: 12, borderRadius: 12 }]} />
+      </View>
+    );
+  }
 
   if (!referral) return null;
 
@@ -37,9 +49,9 @@ export default function InviteCard() {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
       <View style={styles.headerRow}>
-        <Ionicons name="gift" size={18} color={colors.accent || "#FF5722"} />
+        <Ionicons name="gift-outline" size={18} color={colors.accent} />
         <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
           Invite Friends
         </Text>
@@ -50,14 +62,17 @@ export default function InviteCard() {
       </Text>
 
       <View style={styles.row}>
-        <Pressable style={[styles.codeBox, { borderColor: colors.border || "rgba(255,255,255,0.1)" }]} onPress={handleCopy}>
+        <Pressable
+          style={[styles.codeBox, { borderColor: colors.divider, backgroundColor: colors.bg }]}
+          onPress={handleCopy}
+        >
           <Text style={[styles.codeText, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
             {referral.referralCode}
           </Text>
           <Ionicons name={copied ? "checkmark" : "copy-outline"} size={16} color={colors.textMuted} />
         </Pressable>
 
-        <Pressable style={[styles.shareBtn, { backgroundColor: colors.accent || "#FF5722" }]} onPress={handleShare}>
+        <Pressable style={[styles.shareBtn, { backgroundColor: colors.accent }]} onPress={handleShare}>
           <Ionicons name="share-social-outline" size={16} color="#FFFFFF" />
         </Pressable>
       </View>
@@ -83,4 +98,5 @@ const styles = StyleSheet.create({
   },
   codeText: { fontSize: 15, letterSpacing: 1 },
   shareBtn: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  skeletonLine: { height: 14, borderRadius: 4 },
 });

@@ -6,7 +6,7 @@ import Skeleton from "@/components/common/Skeleton";
 export default function NotifCardSkeleton() {
   const { colors } = useHomeTheme();
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface || "#18181B" }]}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <Skeleton width={42} height={42} borderRadius={14} />
       <View style={styles.textCol}>
         <Skeleton width="70%" height={13} style={{ marginBottom: 8 }} />

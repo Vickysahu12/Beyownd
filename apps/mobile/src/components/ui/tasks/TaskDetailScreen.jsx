@@ -4,7 +4,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withRepeat,
+  withTiming,
+  useAnimatedProps,
+} from 'react-native-reanimated';
 import { useHomeTheme } from '@/context/ThemeContext';
 import { apiClient } from '@/api/client';
 import { formatDifficulty } from '@/utils/taskHelpers';
@@ -12,25 +19,57 @@ import TaskSubmissionModal from '@/components/modals/TaskSubmissionModal';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+function SkeletonBlock({ style, colors }) {
+  const opacity = useSharedValue(0.5);
+
+  useEffect(() => {
+    opacity.value = withRepeat(withTiming(1, { duration: 700 }), -1, true);
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.View
+      style={[{ backgroundColor: colors.divider, borderRadius: 12 }, style, animatedStyle]}
+    />
+  );
+}
+
+function TaskDetailSkeleton({ colors }) {
+  return (
+    <View style={styles.scrollContent}>
+      <View style={styles.metaRow}>
+        <SkeletonBlock colors={colors} style={{ width: 90, height: 24, borderRadius: 10 }} />
+        <SkeletonBlock colors={colors} style={{ width: 110, height: 24, borderRadius: 20 }} />
+      </View>
+      <SkeletonBlock colors={colors} style={{ width: '85%', height: 26, marginBottom: 16 }} />
+      <SkeletonBlock colors={colors} style={{ width: '100%', height: 180, borderRadius: 20, marginBottom: 16 }} />
+      <SkeletonBlock colors={colors} style={{ width: '100%', height: 100, borderRadius: 20, marginBottom: 16 }} />
+      <SkeletonBlock colors={colors} style={{ width: '100%', height: 140, borderRadius: 20, marginBottom: 16 }} />
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <SkeletonBlock colors={colors} style={{ flex: 1, height: 64, borderRadius: 18 }} />
+        <SkeletonBlock colors={colors} style={{ flex: 1, height: 64, borderRadius: 18 }} />
+      </View>
+    </View>
+  );
+}
+
 export default function TaskDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const { colors, fonts, isDark } = useHomeTheme();
 
-  // 1. All State Hooks
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // 2. All Reanimated Hooks
   const buttonScale = useSharedValue(1);
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
 
-  // 3. Callback & Effect Hooks
   const fetchTask = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -49,7 +88,6 @@ export default function TaskDetailScreen() {
     fetchTask();
   }, [fetchTask]);
 
-  // 4. Handlers
   const handleOpenModal = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(true);
@@ -60,16 +98,43 @@ export default function TaskDetailScreen() {
     fetchTask();
   };
 
-  // 5. Early Return
   if (loading || !task) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-        {/* Skeleton or Loader component here */}
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <View style={[styles.header, { borderBottomColor: colors.divider }]}>
+          <View style={[styles.backButton, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Ionicons name="arrow-back" size={20} color={colors.textMuted} />
+          </View>
+          <Text style={[styles.headerTitle, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
+            TASK DETAILS
+          </Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {error ? (
+          <View style={styles.errorWrap}>
+            <Ionicons name="alert-circle-outline" size={36} color={colors.danger} />
+            <Text style={[styles.errorText, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
+              Couldn't load this task
+            </Text>
+            <Pressable
+              style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                fetchTask();
+              }}
+            >
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <TaskDetailSkeleton colors={colors} />
+        )}
       </SafeAreaView>
     );
   }
 
-  // 6. Derived Data
   const isSubmitted = task.status === 'completed';
   const latestSubmission = task.submissions?.[0];
 
@@ -84,10 +149,9 @@ export default function TaskDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border || '#27272A' }]}>
+      <View style={[styles.header, { borderBottomColor: colors.divider }]}>
         <Pressable
-          style={[styles.backButton, { backgroundColor: colors.surface || '#18181B', borderColor: colors.border || '#27272A' }]}
+          style={[styles.backButton, { backgroundColor: colors.card, borderColor: colors.divider }]}
           onPress={() => {
             Haptics.selectionAsync();
             router.back();
@@ -102,41 +166,40 @@ export default function TaskDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}>
-        
-        {/* Task Badges Row */}
         <View style={styles.metaRow}>
-          <View style={[styles.idBadge, { backgroundColor: colors.surface, borderColor: colors.border || '#27272A' }]}>
+          <View style={[styles.idBadge, { backgroundColor: colors.card, borderColor: colors.divider }]}>
             <Text style={[styles.idText, { color: colors.textMuted }]}>ID: {task.id.slice(0, 8)}</Text>
           </View>
 
-          <View style={[
-            styles.duoStatusPill,
-            {
-              backgroundColor: isSubmitted ? 'rgba(88, 204, 2, 0.15)' : 'rgba(255, 87, 34, 0.15)',
-              borderColor: isSubmitted ? '#58CC02' : colors.accent || '#FF5722',
-            }
-          ]}>
+          <View
+            style={[
+              styles.statusPill,
+              {
+                backgroundColor: isSubmitted ? colors.successSoft : colors.accentSoft,
+              },
+            ]}
+          >
             <Ionicons
-              name={isSubmitted ? "checkmark-circle-sharp" : "time-sharp"}
+              name={isSubmitted ? 'checkmark-circle' : 'time-outline'}
               size={14}
-              color={isSubmitted ? '#58CC02' : colors.accent || '#FF5722'}
+              color={isSubmitted ? colors.success : colors.accent}
             />
-            <Text style={[
-              styles.duoStatusText,
-              { color: isSubmitted ? '#58CC02' : colors.accent || '#FF5722', fontFamily: fonts.headingBold }
-            ]}>
+            <Text
+              style={[
+                styles.statusText,
+                { color: isSubmitted ? colors.success : colors.accent, fontFamily: fonts.headingBold },
+              ]}
+            >
               {isSubmitted ? 'COMPLETED' : task.status === 'in_progress' ? 'IN PROGRESS' : 'OPEN'}
             </Text>
           </View>
         </View>
 
-        {/* Task Title */}
         <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
           {task.title}
         </Text>
 
-        {/* 3D Visual Card */}
-        <View style={[styles.previewCard, { backgroundColor: colors.surface, borderColor: colors.border || '#27272A' }]}>
+        <View style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
           <Image
             source={{ uri: task.image || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80' }}
             style={styles.mockupImage}
@@ -144,24 +207,22 @@ export default function TaskDetailScreen() {
           />
         </View>
 
-        {/* Description Section */}
-        <View style={[styles.duoCard, { backgroundColor: colors.surface || '#18181B', borderColor: colors.border || '#27272A' }]}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             PROJECT DESCRIPTION
           </Text>
-          <Text style={[styles.bodyText, { color: colors.textMuted, fontFamily: fonts.body }]}>
+          <Text style={[styles.bodyText, { color: colors.textPrimary, fontFamily: fonts.body }]}>
             {task.description}
           </Text>
         </View>
 
-        {/* Deliverables Required */}
-        <View style={[styles.duoCard, { backgroundColor: colors.surface || '#18181B', borderColor: colors.border || '#27272A' }]}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             DELIVERABLES REQUIRED
           </Text>
           {steps.map((step, index) => (
             <View key={index} style={styles.stepRow}>
-              <View style={[styles.stepNumBadge, { backgroundColor: colors.accent || '#FF5722', borderColor: '#D03B0D' }]}>
+              <View style={[styles.stepNumBadge, { backgroundColor: colors.accent }]}>
                 <Text style={[styles.stepNumber, { fontFamily: fonts.headingBold }]}>{index + 1}</Text>
               </View>
               <Text style={[styles.stepText, { color: colors.textPrimary, fontFamily: fonts.bodyMedium }]}>{step}</Text>
@@ -169,39 +230,36 @@ export default function TaskDetailScreen() {
           ))}
         </View>
 
-        {/* Required Tech Stack */}
-        <View style={[styles.duoCard, { backgroundColor: colors.surface || '#18181B', borderColor: colors.border || '#27272A' }]}>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             REQUIRED TECH STACK
           </Text>
           <View style={styles.skillsWrapper}>
             {skills.map((skill, index) => (
-              <View key={index} style={styles.skillBadge}>
-                <Ionicons name="sparkles-sharp" size={12} color="#FFD700" />
-                <Text style={[styles.skillText, { fontFamily: fonts.headingBold }]}>{skill}</Text>
+              <View key={index} style={[styles.skillBadge, { backgroundColor: colors.infoSoft }]}>
+                <Ionicons name="sparkles-outline" size={12} color={colors.info} />
+                <Text style={[styles.skillText, { color: colors.info, fontFamily: fonts.headingBold }]}>{skill}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Stats Grid */}
         <View style={styles.metaGrid}>
-          <View style={styles.gridCard}>
-            <Text style={styles.gridLabel}>DIFFICULTY</Text>
-            <Text style={[styles.gridValue, { color: '#FFD700', fontFamily: fonts.headingBold }]}>
-              ⚡ {formatDifficulty(task.difficulty)}
+          <View style={[styles.gridCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.gridLabel, { color: colors.textMuted }]}>DIFFICULTY</Text>
+            <Text style={[styles.gridValue, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+              {formatDifficulty(task.difficulty)}
             </Text>
           </View>
-          <View style={styles.gridCard}>
-            <Text style={styles.gridLabel}>EST. TIME</Text>
-            <Text style={[styles.gridValue, { color: '#1CB0F6', fontFamily: fonts.headingBold }]}>
-              ⏳ {task.estimatedHours || '—'}
+          <View style={[styles.gridCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+            <Text style={[styles.gridLabel, { color: colors.textMuted }]}>EST. TIME</Text>
+            <Text style={[styles.gridValue, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+              {task.estimatedHours || '—'}
             </Text>
           </View>
         </View>
 
-        {/* Action Card */}
-        <View style={[styles.actionCard, { backgroundColor: colors.surface || '#18181B', borderColor: colors.border || '#27272A' }]}>
+        <View style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
           {!isSubmitted ? (
             <>
               <View>
@@ -214,21 +272,21 @@ export default function TaskDetailScreen() {
               </View>
 
               <AnimatedPressable
-                style={[styles.duoSubmitBtn, animatedButtonStyle]}
+                style={[styles.submitBtn, { backgroundColor: colors.accent }, animatedButtonStyle]}
                 onPress={handleOpenModal}
                 onPressIn={() => (buttonScale.value = withSpring(0.96))}
                 onPressOut={() => (buttonScale.value = withSpring(1))}
               >
-                <Ionicons name="cloud-upload-sharp" size={20} color="#FFFFFF" />
-                <Text style={[styles.submitTriggerText, { fontFamily: fonts.headingBold }]}>
+                <Ionicons name="cloud-upload-outline" size={20} color="#FFFFFF" />
+                <Text style={[styles.submitText, { fontFamily: fonts.headingBold }]}>
                   SUBMIT SOLUTION
                 </Text>
               </AnimatedPressable>
             </>
           ) : (
             <View style={styles.submittedBox}>
-              <View style={styles.submittedIconBox}>
-                <Ionicons name="checkmark-done-sharp" size={26} color="#FFFFFF" />
+              <View style={[styles.submittedIconBox, { backgroundColor: colors.success }]}>
+                <Ionicons name="checkmark-done" size={26} color="#FFFFFF" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.submittedTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
@@ -241,7 +299,6 @@ export default function TaskDetailScreen() {
             </View>
           )}
         </View>
-
       </ScrollView>
 
       <TaskSubmissionModal
@@ -264,53 +321,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
   },
   backButton: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 16, letterSpacing: 0.8 },
+  headerTitle: { fontSize: 13, letterSpacing: 0.8 },
   scrollContent: { padding: 20 },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 40 },
+  errorText: { fontSize: 15, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 4 },
+  retryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  idBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 2, borderBottomWidth: 3 },
-  idText: { fontSize: 11, fontWeight: '800' },
+  idBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
+  idText: { fontSize: 11, fontWeight: '700' },
 
-  duoStatusPill: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 20,
-    borderWidth: 2,
-    borderBottomWidth: 3,
     gap: 6,
   },
-  duoStatusText: { fontSize: 11, letterSpacing: 0.5 },
+  statusText: { fontSize: 11, letterSpacing: 0.5 },
 
   title: { fontSize: 22, lineHeight: 28, marginBottom: 16, letterSpacing: -0.3 },
 
   previewCard: {
     borderRadius: 20,
-    borderWidth: 2,
-    borderBottomWidth: 5,
+    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 16,
     height: 180,
   },
   mockupImage: { width: '100%', height: '100%' },
 
-  duoCard: {
+  card: {
     padding: 16,
     borderRadius: 20,
-    borderWidth: 2,
-    borderBottomWidth: 5,
+    borderWidth: 1,
     marginBottom: 16,
     gap: 12,
   },
@@ -322,8 +378,6 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 8,
-    borderWidth: 1,
-    borderBottomWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -337,58 +391,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: '#1CB0F615',
-    borderColor: '#1CB0F6',
-    borderWidth: 2,
-    borderBottomWidth: 4,
     gap: 6,
   },
-  skillText: { fontSize: 12, color: '#1CB0F6' },
+  skillText: { fontSize: 12 },
 
   metaGrid: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   gridCard: {
     flex: 1,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: '#18181B',
-    borderColor: '#27272A',
-    borderWidth: 2,
-    borderBottomWidth: 5,
+    borderWidth: 1,
     gap: 4,
   },
-  gridLabel: { fontSize: 10, fontWeight: '800', color: '#A1A1AA', letterSpacing: 0.5 },
+  gridLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   gridValue: { fontSize: 15 },
 
   actionCard: {
     padding: 18,
     borderRadius: 20,
-    borderWidth: 2,
-    borderBottomWidth: 5,
+    borderWidth: 1,
     gap: 14,
   },
   actionCardTitle: { fontSize: 14, letterSpacing: 0.5 },
   actionCardDesc: { fontSize: 12, lineHeight: 18 },
 
-  duoSubmitBtn: {
+  submitBtn: {
     height: 50,
     borderRadius: 16,
-    backgroundColor: '#58CC02',
-    borderColor: '#46A302',
-    borderWidth: 2,
-    borderBottomWidth: 5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  submitTriggerText: { color: '#FFFFFF', fontSize: 14, letterSpacing: 0.5 },
+  submitText: { color: '#FFFFFF', fontSize: 14, letterSpacing: 0.5 },
 
   submittedBox: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   submittedIconBox: {
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#58CC02',
     alignItems: 'center',
     justifyContent: 'center',
   },

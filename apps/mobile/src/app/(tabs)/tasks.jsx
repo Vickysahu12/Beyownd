@@ -34,23 +34,12 @@ function FilterPill({ label, isSelected, onPress, colors }) {
       style={[
         styles.filterPill,
         isSelected
-          ? {
-              backgroundColor: colors.accent,
-              borderColor: colors.borderFocus || colors.accent,
-            }
-          : {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-            },
+          ? { backgroundColor: colors.accent, borderColor: colors.accent }
+          : { backgroundColor: colors.card, borderColor: colors.divider },
         animatedStyle,
       ]}
     >
-      <Text
-        style={[
-          styles.filterText,
-          { color: isSelected ? '#FFFFFF' : colors.textMuted },
-        ]}
-      >
+      <Text style={[styles.filterText, { color: isSelected ? '#FFFFFF' : colors.textMuted }]}>
         {label}
       </Text>
     </AnimatedPressable>
@@ -60,9 +49,6 @@ function FilterPill({ label, isSelected, onPress, colors }) {
 export default function Tasks() {
   const router = useRouter();
   const { colors, fonts, isDark, toggleTheme } = useHomeTheme();
-
-  const successColor = colors.success || '#22C55E';
-  const trackBgColor = isDark ? '#27272A' : '#E4E4E7';
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [tasks, setTasks] = useState([]);
@@ -125,34 +111,19 @@ export default function Tasks() {
   }, [activeFilter, tasks]);
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.bg }]}
-      edges={['top']}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <View style={styles.header}>
         <View style={styles.headerMainRow}>
           <View style={styles.headerTitleRow}>
-            <Ionicons name="flash-sharp" size={24} color="#FFD700" />
-            <Text
-              style={[
-                styles.title,
-                { color: colors.textPrimary, fontFamily: fonts.headingBold },
-              ]}
-            >
-              REALITY TASKS
+            <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
+              Reality Tasks
             </Text>
           </View>
 
           <Pressable
-            style={[
-              styles.themeToggleBtn,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-              },
-            ]}
+            style={[styles.themeToggleBtn, { backgroundColor: colors.card, borderColor: colors.divider }]}
             onPress={() => {
               Haptics.selectionAsync();
               toggleTheme();
@@ -167,7 +138,7 @@ export default function Tasks() {
         </View>
 
         <Text style={[styles.tagline, { color: colors.textMuted }]}>
-          PROVE YOUR SKILLS
+          Prove your skills, one task at a time
         </Text>
       </View>
 
@@ -181,49 +152,26 @@ export default function Tasks() {
         emptySubtitle="Your first Reality Task will show up here soon."
       >
         <View style={styles.subHeader}>
-          <View
-            style={[
-              styles.duoProgressCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-              },
-            ]}
-          >
+          <View style={[styles.progressCard, { backgroundColor: colors.card, borderColor: colors.divider }]}>
             <View style={styles.progressInfo}>
               <View style={styles.progressLabelRow}>
-                <Ionicons name="trophy-sharp" size={16} color={successColor} />
-                <Text
-                  style={[
-                    styles.progressLabel,
-                    { color: colors.textPrimary, fontFamily: fonts.headingSemi },
-                  ]}
-                >
-                  QUEST PROGRESS
+                <Ionicons name="trophy-outline" size={16} color={colors.success} />
+                <Text style={[styles.progressLabel, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
+                  Quest Progress
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.progressVal,
-                  { color: successColor, fontFamily: fonts.headingBold },
-                ]}
-              >
+              <Text style={[styles.progressVal, { color: colors.success, fontFamily: fonts.headingBold }]}>
                 {completedCount} / {tasks.length} ({progressPercent}%)
               </Text>
             </View>
 
-            <View
-              style={[
-                styles.track,
-                { backgroundColor: trackBgColor },
-              ]}
-            >
+            <View style={[styles.track, { backgroundColor: colors.divider }]}>
               <View
                 style={[
                   styles.fill,
                   {
                     width: `${Math.min(Math.max(progressPercent, 0), 100)}%`,
-                    backgroundColor: successColor,
+                    backgroundColor: colors.success,
                   },
                 ]}
               />
@@ -257,10 +205,7 @@ export default function Tasks() {
             />
           }
           renderItem={({ item }) => (
-            <TaskListCard
-              task={item}
-              onPress={() => router.push(`/task/${item.id}`)}
-            />
+            <TaskListCard task={item} onPress={() => router.push(`/task/${item.id}`)} />
           )}
         />
       </ScreenStateWrapper>
@@ -277,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 22, letterSpacing: 0.8 },
+  title: { fontSize: 24, letterSpacing: -0.4 },
   themeToggleBtn: {
     width: 38,
     height: 38,
@@ -286,15 +231,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
   },
-  tagline: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 2 },
+  tagline: { fontSize: 13, marginTop: 2 },
   subHeader: { paddingHorizontal: 20 },
 
-  duoProgressCard: {
+  progressCard: {
     borderRadius: 20,
     padding: 16,
-    marginTop: 10,
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    marginTop: 12,
+    borderWidth: 1,
     gap: 12,
   },
   progressInfo: {
@@ -303,20 +247,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   progressLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  progressLabel: { fontSize: 12, letterSpacing: 0.5 },
+  progressLabel: { fontSize: 13 },
   progressVal: { fontSize: 13 },
-  track: { height: 12, borderRadius: 6, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 6 },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 4 },
 
   filterRow: { flexDirection: 'row', gap: 8, marginTop: 16, marginBottom: 10 },
   filterPill: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    paddingVertical: 9,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  filterText: { fontSize: 13, fontWeight: '800' },
+  filterText: { fontSize: 13, fontWeight: '600' },
 
   list: { paddingHorizontal: 20, paddingBottom: 100 },
 });

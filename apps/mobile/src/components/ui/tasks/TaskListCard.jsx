@@ -1,31 +1,29 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { darkColors as colors } from '@/constants/darkTheme';
-import { fonts } from '@/constants/theme';
+import { useHomeTheme } from '@/context/ThemeContext';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const STATUS_CONFIG = {
-  completed: { label: 'Completed', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' },
-  in_progress: { label: 'In Progress', color: '#FF5722', bg: 'rgba(255, 87, 34, 0.12)' },
-  open: { label: 'Open', color: '#60A5FA', bg: 'rgba(96, 165, 250, 0.12)' },
-  pending: { label: 'Open', color: '#60A5FA', bg: 'rgba(96, 165, 250, 0.12)' },
-  locked: { label: 'Locked', color: '#71717A', bg: 'rgba(113, 113, 122, 0.12)' },
-};
-
 export default function TaskListCard({ task, onPress }) {
+  const { colors, fonts } = useHomeTheme();
   const scale = useSharedValue(1);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const STATUS_CONFIG = {
+    completed: { label: 'Completed', color: colors.success, bg: colors.successSoft },
+    in_progress: { label: 'In Progress', color: colors.accent, bg: colors.accentSoft },
+    open: { label: 'Open', color: colors.info, bg: colors.infoSoft },
+    pending: { label: 'Open', color: colors.info, bg: colors.infoSoft },
+    locked: { label: 'Locked', color: colors.textMuted, bg: colors.divider },
+  };
 
   const statusKey = task.status || 'open';
   const status = STATUS_CONFIG[statusKey] || STATUS_CONFIG.open;
   const isLocked = task.status === 'locked';
 
-  // Short ID display (e.g. 94f61282)
   const displayId = task.id ? (task.id.length > 8 ? `${task.id.slice(0, 8)}` : task.id) : 'TASK';
 
   return (
@@ -39,22 +37,19 @@ export default function TaskListCard({ task, onPress }) {
       onPressIn={() => (scale.value = withSpring(0.97, { damping: 12, stiffness: 200 }))}
       onPressOut={() => (scale.value = withSpring(1))}
     >
-      <LinearGradient
-        colors={
-          isLocked
-            ? ['#18181B', '#121215']
-            : task.status === 'in_progress'
-            ? ['#201A18', '#141417']
-            : ['#1C1C21', '#141417']
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.card, { opacity: isLocked ? 0.55 : 1 }]}
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.divider,
+            opacity: isLocked ? 0.55 : 1,
+          },
+        ]}
       >
-        {/* Top Header Row */}
         <View style={styles.topRow}>
-          <View style={styles.idTag}>
-            <Text style={styles.idText}>#{displayId}</Text>
+          <View style={[styles.idTag, { backgroundColor: colors.bg }]}>
+            <Text style={[styles.idText, { color: colors.textMuted }]}>#{displayId}</Text>
           </View>
 
           <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
@@ -65,41 +60,42 @@ export default function TaskListCard({ task, onPress }) {
           </View>
         </View>
 
-        {/* Task Title */}
-        <Text style={[styles.title, { fontFamily: fonts.headingBold }]} numberOfLines={2}>
+        <Text
+          style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}
+          numberOfLines={2}
+        >
           {task.title}
         </Text>
 
-        {/* Bottom Metadata & Arrow CTA */}
         <View style={styles.bottomRow}>
           <View style={styles.metaGroup}>
-            <View style={styles.chip}>
-              <Ionicons name="flame-outline" size={12} color="#FF5722" />
-              <Text style={styles.chipText}>{task.difficulty}</Text>
+            <View style={[styles.chip, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="flame-outline" size={12} color={colors.accent} />
+              <Text style={[styles.chipText, { color: colors.accent }]}>{task.difficulty}</Text>
             </View>
 
             <View style={styles.dueRow}>
               {!isLocked ? (
                 <>
-                  <Ionicons name="time-outline" size={13} color="#A1A1AA" />
-                  <Text style={styles.dueText}>{task.due}</Text>
+                  <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+                  <Text style={[styles.dueText, { color: colors.textMuted }]}>{task.due}</Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="lock-closed-outline" size={13} color="#71717A" />
-                  <Text style={styles.dueText}>Unlocks soon</Text>
+                  <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
+                  <Text style={[styles.dueText, { color: colors.textMuted }]}>Unlocks soon</Text>
                 </>
               )}
             </View>
           </View>
 
           {!isLocked && (
-            <View style={styles.chevronCircle}>
-              <Ionicons name="arrow-forward" size={14} color="#FF5722" />
+            <View style={[styles.chevronCircle, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="arrow-forward" size={14} color={colors.accent} />
             </View>
           )}
         </View>
-      </LinearGradient>
+      </View>
     </AnimatedPressable>
   );
 }
@@ -108,13 +104,16 @@ const styles = StyleSheet.create({
   cardWrapper: {
     marginBottom: 14,
     borderRadius: 22,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   card: {
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     padding: 18,
-    overflow: 'hidden',
   },
   topRow: {
     flexDirection: 'row',
@@ -123,13 +122,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   idTag: {
-    backgroundColor: '#27272A',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   idText: {
-    color: '#A1A1AA',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -152,7 +149,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   title: {
-    color: '#F4F4F5',
     fontSize: 17,
     lineHeight: 22,
     marginBottom: 16,
@@ -170,14 +166,12 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 87, 34, 0.1)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     gap: 4,
   },
   chipText: {
-    color: '#FF5722',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -187,14 +181,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dueText: {
-    color: '#A1A1AA',
     fontSize: 12,
   },
   chevronCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#27272A',
     alignItems: 'center',
     justifyContent: 'center',
   },

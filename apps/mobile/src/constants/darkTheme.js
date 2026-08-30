@@ -3,11 +3,11 @@ export const darkColors = {
   card: "#16161D",
   surface: "#1C1C24",
 
-  accent: "#FF7A3C",
-  accentSoft: "rgba(255,122,60,0.15)",
+  accent: "#3DDC84",
+  accentSoft: "rgba(61,220,132,0.15)",
 
   border: "#2A2A33",
-  borderFocus: "#FF7A3C",
+  borderFocus: "#3DDC84",
 
   danger: "#FF5470",
 

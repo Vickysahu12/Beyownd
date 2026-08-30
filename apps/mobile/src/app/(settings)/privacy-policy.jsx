@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Linking,
-  StatusBar,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, StatusBar } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,8 +45,7 @@ export default function PrivacyPolicyScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Top Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
@@ -68,9 +59,11 @@ export default function PrivacyPolicyScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Effective Date Card */}
-        <Animated.View entering={FadeInDown.duration(400)} style={[styles.metaCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}>
-          <Ionicons name="shield-checkmark" size={20} color={colors.accent || "#FF5722"} />
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          style={[styles.metaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
+          <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
           <View>
             <Text style={[styles.metaTitle, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
               Privacy & Security Guaranteed
@@ -81,12 +74,11 @@ export default function PrivacyPolicyScreen() {
           </View>
         </Animated.View>
 
-        {/* Policy Sections */}
         {POLICY_SECTIONS.map((sec, i) => (
           <Animated.View
             key={i}
             entering={FadeInDown.delay(100 * (i + 1)).duration(400)}
-            style={[styles.sectionCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}
+            style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
             <Text style={[styles.secTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
               {sec.title}
@@ -97,20 +89,19 @@ export default function PrivacyPolicyScreen() {
           </Animated.View>
         ))}
 
-        {/* Legal Contact Footer */}
         <Animated.View entering={FadeInDown.delay(600).duration(400)} style={styles.footerBox}>
           <Text style={[styles.footerText, { color: colors.textMuted, fontFamily: fonts.body }]}>
             Have any questions or concerns regarding your privacy?
           </Text>
           <Pressable
-            style={[styles.legalBtn, { borderColor: colors.accent || "#FF5722" }]}
+            style={[styles.legalBtn, { borderColor: colors.accent }]}
             onPress={() => {
               Haptics.selectionAsync();
               Linking.openURL("mailto:privacy@yourcompany.com");
             }}
           >
-            <Ionicons name="mail-outline" size={16} color={colors.accent || "#FF5722"} />
-            <Text style={[styles.legalBtnText, { color: colors.accent || "#FF5722", fontFamily: fonts.headingSemi }]}>
+            <Ionicons name="mail-outline" size={16} color={colors.accent} />
+            <Text style={[styles.legalBtnText, { color: colors.accent, fontFamily: fonts.headingSemi }]}>
               Contact Data Protection Officer
             </Text>
           </Pressable>
@@ -146,13 +137,7 @@ const styles = StyleSheet.create({
   metaTitle: { fontSize: 13 },
   metaDate: { fontSize: 11, marginTop: 2 },
 
-  sectionCard: {
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    marginBottom: 12,
-    gap: 8,
-  },
+  sectionCard: { padding: 16, borderRadius: 18, borderWidth: 1, marginBottom: 12, gap: 8 },
   secTitle: { fontSize: 14 },
   secContent: { fontSize: 13, lineHeight: 20 },
 

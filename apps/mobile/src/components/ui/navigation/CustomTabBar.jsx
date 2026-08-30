@@ -28,12 +28,11 @@ export default function CustomTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const indicatorX = useSharedValue(state.index * TAB_WIDTH);
 
-  // Active tab change hone par indicator animate hoga
   useEffect(() => {
     indicatorX.value = withSpring(state.index * TAB_WIDTH, {
-      damping: 16,
-      stiffness: 180,
-      mass: 0.7,
+      damping: 14,
+      stiffness: 200,
+      mass: 0.6,
     });
   }, [state.index]);
 
@@ -99,8 +98,9 @@ function TabItem({ tab, isFocused, onPress }) {
       <Animated.View style={iconStyle}>
         <Ionicons
           name={isFocused ? tab.icon : tab.iconOutline}
-          size={20}
+          size={isFocused ? 21 : 20}
           color={isFocused ? colors.accent : colors.textMuted}
+          style={{ opacity: isFocused ? 1 : 0.7 }}
         />
       </Animated.View>
 
@@ -125,11 +125,11 @@ const styles = StyleSheet.create({
     height: 62,
     borderRadius: 31,
     overflow: "hidden",
-    backgroundColor: "rgba(22,22,29,0.92)",
+    backgroundColor: "rgba(13,13,18,0.92)",
     borderWidth: 1,
     borderColor: "rgba(42,42,51,0.9)",
     shadowColor: "#000",
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
     elevation: 12,

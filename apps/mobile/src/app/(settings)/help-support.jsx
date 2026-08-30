@@ -76,8 +76,7 @@ export default function HelpSupportScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
@@ -91,13 +90,15 @@ export default function HelpSupportScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Search Bar */}
-        <Animated.View entering={FadeInDown.duration(400)} style={[styles.searchBox, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.1)" }]}>
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
           <Ionicons name="search-outline" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary, fontFamily: fonts.body }]}
             placeholder="Search help articles..."
-            placeholderTextColor="#71717A"
+            placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -108,7 +109,6 @@ export default function HelpSupportScreen() {
           )}
         </Animated.View>
 
-        {/* Support Categories */}
         <Animated.View entering={FadeInDown.delay(100).duration(400)}>
           <Text style={[styles.sectionTitle, { color: colors.textMuted, fontFamily: fonts.headingSemi }]}>
             CATEGORIES
@@ -122,7 +122,7 @@ export default function HelpSupportScreen() {
             ].map((cat, i) => (
               <Pressable
                 key={i}
-                style={[styles.categoryCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}
+                style={[styles.categoryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => Haptics.selectionAsync()}
               >
                 <View style={[styles.categoryIconCircle, { backgroundColor: cat.color + "20" }]}>
@@ -136,7 +136,6 @@ export default function HelpSupportScreen() {
           </View>
         </Animated.View>
 
-        {/* FAQs */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)} style={{ marginTop: 24 }}>
           <Text style={[styles.sectionTitle, { color: colors.textMuted, fontFamily: fonts.headingSemi }]}>
             FREQUENTLY ASKED QUESTIONS
@@ -147,17 +146,13 @@ export default function HelpSupportScreen() {
             return (
               <View
                 key={faq.id}
-                style={[styles.faqCard, { backgroundColor: colors.surface || "#18181B", borderColor: colors.border || "rgba(255,255,255,0.08)" }]}
+                style={[styles.faqCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
                 <Pressable style={styles.faqHeader} onPress={() => toggleFaq(faq.id)}>
                   <Text style={[styles.faqQuestion, { color: colors.textPrimary, fontFamily: fonts.headingSemi }]}>
                     {faq.question}
                   </Text>
-                  <Ionicons
-                    name={isOpen ? "chevron-up" : "chevron-down"}
-                    size={18}
-                    color={colors.textMuted}
-                  />
+                  <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />
                 </Pressable>
                 {isOpen && (
                   <Text style={[styles.faqAnswer, { color: colors.textMuted, fontFamily: fonts.body }]}>
@@ -169,9 +164,11 @@ export default function HelpSupportScreen() {
           })}
         </Animated.View>
 
-        {/* Direct Contact Banner */}
-        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={[styles.contactCard, { backgroundColor: (colors.accent || "#FF5722") + "15", borderColor: (colors.accent || "#FF5722") + "40" }]}>
-          <Ionicons name="headset-outline" size={32} color={colors.accent || "#FF5722"} />
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(400)}
+          style={[styles.contactCard, { backgroundColor: colors.accentSoft, borderColor: colors.accent + "40" }]}
+        >
+          <Ionicons name="headset-outline" size={32} color={colors.accent} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.contactTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
               Still need help?
@@ -180,7 +177,7 @@ export default function HelpSupportScreen() {
               Our support team usually replies within 2 hours.
             </Text>
           </View>
-          <Pressable style={[styles.contactBtn, { backgroundColor: colors.accent || "#FF5722" }]} onPress={openEmailSupport}>
+          <Pressable style={[styles.contactBtn, { backgroundColor: colors.accent }]} onPress={openEmailSupport}>
             <Text style={[styles.contactBtnText, { fontFamily: fonts.headingBold }]}>Email Us</Text>
           </Pressable>
         </Animated.View>

@@ -54,7 +54,7 @@ function NoteRow({ item, isFirst, isLast, tint, colors, fonts, onPress }) {
         styles.rowCard,
         borderStyle,
         {
-          backgroundColor: colors.card || colors.surface || "#18181B",
+          backgroundColor: colors.card,
           borderColor: colors.divider,
         },
         animatedStyle,
@@ -87,12 +87,7 @@ function NoteRow({ item, isFirst, isLast, tint, colors, fonts, onPress }) {
             {item.title}
           </Text>
           <View style={styles.progressWrap}>
-            <View
-              style={[
-                styles.trackBg,
-                { backgroundColor: colors.divider || "rgba(255,255,255,0.08)" },
-              ]}
-            >
+            <View style={[styles.trackBg, { backgroundColor: colors.divider }]}>
               <View
                 style={[
                   styles.trackFill,
@@ -111,18 +106,9 @@ function NoteRow({ item, isFirst, isLast, tint, colors, fonts, onPress }) {
           </View>
         </View>
       </View>
-      <Ionicons
-        name="chevron-forward"
-        size={16}
-        color={colors.textMuted || "rgba(255,255,255,0.25)"}
-      />
+      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
       {!isLast && (
-        <View
-          style={[
-            styles.separator,
-            { backgroundColor: colors.divider || "rgba(255,255,255,0.06)" },
-          ]}
-        />
+        <View style={[styles.separator, { backgroundColor: colors.divider }]} />
       )}
     </AnimatedPressable>
   );
@@ -207,7 +193,7 @@ export default function NotesScreen() {
             <Ionicons
               name="ellipsis-horizontal-circle-outline"
               size={26}
-              color={colors.accent || "#FF5722"}
+              color={colors.accent}
             />
           </Pressable>
         </View>
@@ -215,20 +201,13 @@ export default function NotesScreen() {
         <View
           style={[
             styles.searchBar,
-            {
-              backgroundColor: colors.card || "rgba(255,255,255,0.06)",
-              borderColor: colors.divider,
-            },
+            { backgroundColor: colors.card, borderColor: colors.divider },
           ]}
         >
-          <Ionicons
-            name="search-outline"
-            size={17}
-            color={colors.textMuted || "#A1A1AA"}
-          />
+          <Ionicons name="search-outline" size={17} color={colors.textMuted} />
           <TextInput
             placeholder="Search notes, tracks..."
-            placeholderTextColor={colors.textMuted || "#71717A"}
+            placeholderTextColor={colors.textMuted}
             style={[
               styles.searchInput,
               { color: colors.textPrimary, fontFamily: fonts.body },
@@ -238,11 +217,7 @@ export default function NotesScreen() {
           />
           {search ? (
             <Pressable onPress={() => setSearch("")}>
-              <Ionicons
-                name="close-circle"
-                size={16}
-                color={colors.textMuted || "#71717A"}
-              />
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
             </Pressable>
           ) : null}
         </View>
@@ -276,10 +251,7 @@ export default function NotesScreen() {
             />
           }
           renderSectionHeader={({ section }) => {
-            const tint =
-              colors[TRACK_ACCENT[section.title]] ||
-              colors.accent ||
-              "#FF5722";
+            const tint = colors[TRACK_ACCENT[section.title]] || colors.accent;
             return (
               <Animated.View
                 entering={FadeInDown.duration(300)}
@@ -288,17 +260,12 @@ export default function NotesScreen() {
                 <Text
                   style={[
                     styles.sectionTitle,
-                    {
-                      color: colors.textMuted,
-                      fontFamily: fonts.headingSemi,
-                    },
+                    { color: colors.textMuted, fontFamily: fonts.headingSemi },
                   ]}
                 >
                   {section.title}
                 </Text>
-                <View
-                  style={[styles.countBadge, { backgroundColor: tint + "20" }]}
-                >
+                <View style={[styles.countBadge, { backgroundColor: tint + "20" }]}>
                   <Text
                     style={[
                       styles.countText,
@@ -314,8 +281,7 @@ export default function NotesScreen() {
           renderItem={({ item, index, section }) => {
             const isFirst = index === 0;
             const isLast = index === section.data.length - 1;
-            const tint =
-              colors[TRACK_ACCENT[item.track]] || colors.accent || "#FF5722";
+            const tint = colors[TRACK_ACCENT[item.track]] || colors.accent;
             return (
               <Animated.View
                 entering={FadeInDown.delay(index * 30)

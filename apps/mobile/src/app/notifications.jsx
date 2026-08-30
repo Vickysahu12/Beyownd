@@ -86,9 +86,9 @@ export default function NotificationScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <View style={[styles.header, { borderBottomColor: colors.border || colors.divider }]}>
+      <Animated.View entering={FadeInDown.duration(300)} style={[styles.header, { borderBottomColor: colors.divider }]}>
         <Pressable
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.divider }]}
           onPress={() => {
             Haptics.selectionAsync();
             router.back();
@@ -110,9 +110,9 @@ export default function NotificationScreen() {
         ) : (
           <View style={{ width: 40 }} />
         )}
-      </View>
+      </Animated.View>
 
-      <Animated.View entering={FadeInDown.duration(350)} style={styles.tabsWrapper}>
+      <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.tabsWrapper}>
         {TABS.map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -122,7 +122,7 @@ export default function NotificationScreen() {
                 styles.tabPill,
                 {
                   backgroundColor: isActive ? colors.accent : colors.card,
-                  borderColor: isActive ? "transparent" : colors.border,
+                  borderColor: isActive ? "transparent" : colors.divider,
                 },
               ]}
               onPress={() => handleTabChange(tab)}
@@ -172,8 +172,8 @@ export default function NotificationScreen() {
                 style={[
                   styles.notifCard,
                   {
-                    backgroundColor: item.read ? colors.card : colors.accentSoft || colors.card,
-                    borderColor: !item.read ? colors.accent + "40" : colors.border,
+                    backgroundColor: item.read ? colors.card : colors.accentSoft,
+                    borderColor: !item.read ? colors.accent + "40" : colors.divider,
                   },
                 ]}
                 onPress={() => handleCardPress(item.id)}

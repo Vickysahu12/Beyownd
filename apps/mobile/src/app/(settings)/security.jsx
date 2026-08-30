@@ -23,13 +23,11 @@ export default function SecurityScreen() {
   const insets = useSafeAreaInsets();
   const { colors, fonts, isDark } = useHomeTheme();
 
-  // Password State
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
 
-  // Security Toggles
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
 
@@ -64,24 +62,12 @@ export default function SecurityScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.bg || "#09090B" }]}
-      edges={["top"]}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Navigation Header */}
-      <View
-        style={[
-          styles.header,
-          { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" },
-        ]}
-      >
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable
-          style={[
-            styles.backBtn,
-            { backgroundColor: colors.surface || "#18181B" },
-          ]}
+          style={[styles.backBtn, { backgroundColor: colors.surface }]}
           onPress={() => {
             Haptics.selectionAsync();
             router.back();
@@ -89,15 +75,7 @@ export default function SecurityScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text
-          style={[
-            styles.headerTitle,
-            {
-              color: colors.textPrimary || "#FFFFFF",
-              fontFamily: fonts.headingBold || "Sora_700Bold",
-            },
-          ]}
-        >
+        <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
           SECURITY & PASSWORD
         </Text>
         <View style={{ width: 36 }} />
@@ -105,101 +83,52 @@ export default function SecurityScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Change Password Section */}
         <Animated.View entering={FadeInDown.duration(350)} style={styles.section}>
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             CHANGE PASSWORD
           </Text>
 
-          {/* Current Password */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Current Password
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                {
-                  backgroundColor: colors.surface || "#18181B",
-                  borderColor: colors.border || "rgba(255,255,255,0.08)",
-                },
-              ]}
-            >
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Current Password</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary }]}
                 secureTextEntry={!showPasswords}
                 placeholder="Enter current password"
-                placeholderTextColor={colors.textMuted || "#71717A"}
+                placeholderTextColor={colors.textMuted}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
               />
               <Pressable onPress={() => setShowPasswords(!showPasswords)}>
-                <Ionicons
-                  name={showPasswords ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={colors.textMuted}
-                />
+                <Ionicons name={showPasswords ? "eye-off-outline" : "eye-outline"} size={20} color={colors.textMuted} />
               </Pressable>
             </View>
           </View>
 
-          {/* New Password */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              New Password
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                {
-                  backgroundColor: colors.surface || "#18181B",
-                  borderColor: colors.border || "rgba(255,255,255,0.08)",
-                },
-              ]}
-            >
+            <Text style={[styles.label, { color: colors.textPrimary }]}>New Password</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary }]}
                 secureTextEntry={!showPasswords}
                 placeholder="Enter new password"
-                placeholderTextColor={colors.textMuted || "#71717A"}
+                placeholderTextColor={colors.textMuted}
                 value={newPassword}
                 onChangeText={setNewPassword}
               />
             </View>
           </View>
 
-          {/* Confirm Password */}
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>
-              Confirm New Password
-            </Text>
-            <View
-              style={[
-                styles.inputWrapper,
-                {
-                  backgroundColor: colors.surface || "#18181B",
-                  borderColor: colors.border || "rgba(255,255,255,0.08)",
-                },
-              ]}
-            >
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Confirm New Password</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary }]}
                 secureTextEntry={!showPasswords}
                 placeholder="Confirm new password"
-                placeholderTextColor={colors.textMuted || "#71717A"}
+                placeholderTextColor={colors.textMuted}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
@@ -209,10 +138,7 @@ export default function SecurityScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.saveBtn,
-              {
-                backgroundColor: colors.accent || "#FF5722",
-                opacity: pressed ? 0.8 : 1,
-              },
+              { backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
             ]}
             onPress={handleUpdatePassword}
           >
@@ -220,38 +146,16 @@ export default function SecurityScreen() {
           </Pressable>
         </Animated.View>
 
-        {/* Multi-Factor Authentication Section */}
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(350)}
-          style={styles.section}
-        >
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+        <Animated.View entering={FadeInDown.delay(100).duration(350)} style={styles.section}>
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             TWO-FACTOR AUTHENTICATION
           </Text>
 
-          <View
-            style={[
-              styles.rowCard,
-              {
-                backgroundColor: colors.surface || "#18181B",
-                borderColor: colors.border || "rgba(255,255,255,0.08)",
-              },
-            ]}
-          >
+          <View style={[styles.rowCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.rowLeft}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#10B981" />
+              <Ionicons name="shield-checkmark-outline" size={20} color={colors.success} />
               <View style={styles.rowText}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>
-                  2-Factor Authentication
-                </Text>
+                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>2-Factor Authentication</Text>
                 <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>
                   Secure login with SMS or authenticator
                 </Text>
@@ -263,29 +167,17 @@ export default function SecurityScreen() {
                 Haptics.selectionAsync();
                 setTwoFactorEnabled(val);
               }}
-              trackColor={{ false: "#27272A", true: colors.accent || "#FF5722" }}
+              trackColor={{ false: colors.border, true: colors.accent }}
               thumbColor="#FFFFFF"
             />
           </View>
 
-          <View
-            style={[
-              styles.rowCard,
-              {
-                backgroundColor: colors.surface || "#18181B",
-                borderColor: colors.border || "rgba(255,255,255,0.08)",
-              },
-            ]}
-          >
+          <View style={[styles.rowCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.rowLeft}>
-              <Ionicons name="finger-print-outline" size={20} color="#0EA5E9" />
+              <Ionicons name="finger-print-outline" size={20} color={colors.info} />
               <View style={styles.rowText}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>
-                  Biometric Unlock
-                </Text>
-                <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>
-                  Use Face ID or Fingerprint
-                </Text>
+                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Biometric Unlock</Text>
+                <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>Use Face ID or Fingerprint</Text>
               </View>
             </View>
             <Switch
@@ -294,47 +186,23 @@ export default function SecurityScreen() {
                 Haptics.selectionAsync();
                 setBiometricsEnabled(val);
               }}
-              trackColor={{ false: "#27272A", true: colors.accent || "#FF5722" }}
+              trackColor={{ false: colors.border, true: colors.accent }}
               thumbColor="#FFFFFF"
             />
           </View>
         </Animated.View>
 
-        {/* Active Sessions */}
-        <Animated.View
-          entering={FadeInDown.delay(200).duration(350)}
-          style={styles.section}
-        >
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+        <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.section}>
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             ACTIVE SESSIONS
           </Text>
 
-          <View
-            style={[
-              styles.rowCard,
-              {
-                backgroundColor: colors.surface || "#18181B",
-                borderColor: colors.border || "rgba(255,255,255,0.08)",
-              },
-            ]}
-          >
+          <View style={[styles.rowCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.rowLeft}>
               <Ionicons name="phone-portrait-outline" size={20} color="#6366F1" />
               <View style={styles.rowText}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>
-                  Current Device (This Phone)
-                </Text>
-                <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>
-                  Active now • India
-                </Text>
+                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Current Device (This Phone)</Text>
+                <Text style={[styles.rowSubtitle, { color: colors.textMuted }]}>Active now • India</Text>
               </View>
             </View>
           </View>
@@ -355,20 +223,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: { fontSize: 13, letterSpacing: 0.8 },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  backBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
   section: { gap: 12 },
-  sectionHeader: {
-    fontSize: 11,
-    letterSpacing: 1,
-    marginLeft: 4,
-  },
+  sectionHeader: { fontSize: 11, letterSpacing: 1, marginLeft: 4 },
   inputGroup: { gap: 6 },
   label: { fontSize: 12, fontWeight: "600" },
   inputWrapper: {
@@ -380,13 +238,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   input: { flex: 1, fontSize: 14 },
-  saveBtn: {
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
+  saveBtn: { height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", marginTop: 8 },
   saveBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
   rowCard: {
     flexDirection: "row",

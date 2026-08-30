@@ -15,17 +15,16 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
-import { HomeThemeProvider, useHomeTheme } from "@/context/ThemeContext";
+import { useHomeTheme } from "@/context/ThemeContext";
 import { useAuthStore } from "@/store/useAuthStore";
 
-function SettingsContent() {
+export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, fonts, isDark, toggleTheme } = useHomeTheme();
 
   const logout = useAuthStore((state) => state.logout);
 
-  // Settings State
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -73,8 +72,8 @@ function SettingsContent() {
         style={({ pressed }) => [
           styles.itemRow,
           {
-            backgroundColor: colors.surface || "#18181B",
-            borderColor: colors.border || "rgba(255,255,255,0.06)",
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
             opacity: pressed && onPress ? 0.7 : 1,
           },
         ]}
@@ -97,10 +96,8 @@ function SettingsContent() {
               style={[
                 styles.itemTitle,
                 {
-                  color: isDestructive
-                    ? "#EF4444"
-                    : colors.textPrimary || "#FFFFFF",
-                  fontFamily: fonts.headingSemi || "Sora_600SemiBold",
+                  color: isDestructive ? colors.danger : colors.textPrimary,
+                  fontFamily: fonts.headingSemi,
                 },
               ]}
             >
@@ -110,10 +107,7 @@ function SettingsContent() {
               <Text
                 style={[
                   styles.itemSubtitle,
-                  {
-                    color: colors.textMuted || "#A1A1AA",
-                    fontFamily: fonts.body || "Inter_400Regular",
-                  },
+                  { color: colors.textMuted, fontFamily: fonts.body },
                 ]}
               >
                 {subtitle}
@@ -129,16 +123,12 @@ function SettingsContent() {
               triggerHaptic();
               onValueChange(val);
             }}
-            trackColor={{ false: "#27272A", true: colors.accent || "#FF5722" }}
+            trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor="#FFFFFF"
           />
         ) : (
           onPress && (
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.textMuted || "#A1A1AA"}
-            />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           )
         )}
       </Pressable>
@@ -146,24 +136,12 @@ function SettingsContent() {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.bg || "#09090B" }]}
-      edges={["top"]}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={["top"]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Navigation Header */}
-      <View
-        style={[
-          styles.header,
-          { borderBottomColor: colors.border || "rgba(255,255,255,0.08)" },
-        ]}
-      >
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Pressable
-          style={[
-            styles.backBtn,
-            { backgroundColor: colors.surface || "#18181B" },
-          ]}
+          style={[styles.backBtn, { backgroundColor: colors.surface }]}
           onPress={() => {
             triggerHaptic();
             router.back();
@@ -171,15 +149,7 @@ function SettingsContent() {
         >
           <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text
-          style={[
-            styles.headerTitle,
-            {
-              color: colors.textPrimary || "#FFFFFF",
-              fontFamily: fonts.headingBold || "Sora_700Bold",
-            },
-          ]}
-        >
+        <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.headingBold }]}>
           SETTINGS
         </Text>
         <View style={{ width: 36 }} />
@@ -187,22 +157,10 @@ function SettingsContent() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 40 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
       >
-        {/* Account Section */}
         <Animated.View entering={FadeInDown.duration(350)} style={styles.section}>
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             ACCOUNT
           </Text>
           {renderSettingItem({
@@ -215,34 +173,22 @@ function SettingsContent() {
           })}
           {renderSettingItem({
             icon: "key-outline",
-            iconBg: "rgba(16, 185, 129, 0.15)",
-            iconColor: "#10B981",
+            iconBg: colors.successSoft,
+            iconColor: colors.success,
             title: "Security & Password",
             subtitle: "Manage login preferences",
             onPress: () => router.push("/security"),
           })}
         </Animated.View>
 
-        {/* Preferences Section */}
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(350)}
-          style={styles.section}
-        >
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+        <Animated.View entering={FadeInDown.delay(100).duration(350)} style={styles.section}>
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             PREFERENCES
           </Text>
           {renderSettingItem({
             icon: isDark ? "moon" : "sunny",
-            iconBg: "rgba(234, 179, 8, 0.15)",
-            iconColor: "#EAB308",
+            iconBg: colors.accentSoft,
+            iconColor: colors.accent,
             title: "Dark Mode",
             subtitle: isDark ? "Dark theme active" : "Light theme active",
             value: isDark,
@@ -250,8 +196,8 @@ function SettingsContent() {
           })}
           {renderSettingItem({
             icon: "notifications-outline",
-            iconBg: "rgba(255, 87, 34, 0.15)",
-            iconColor: "#FF5722",
+            iconBg: colors.accentSoft,
+            iconColor: colors.accent,
             title: "Push Notifications",
             subtitle: "Streak alerts and study reminders",
             value: notificationsEnabled,
@@ -259,8 +205,8 @@ function SettingsContent() {
           })}
           {renderSettingItem({
             icon: "phone-portrait-outline",
-            iconBg: "rgba(14, 165, 233, 0.15)",
-            iconColor: "#0EA5E9",
+            iconBg: colors.infoSoft,
+            iconColor: colors.info,
             title: "Haptic Feedback",
             subtitle: "Vibrations on action taps",
             value: hapticsEnabled,
@@ -268,8 +214,8 @@ function SettingsContent() {
           })}
           {renderSettingItem({
             icon: "volume-medium-outline",
-            iconBg: "rgba(168, 85, 247, 0.15)",
-            iconColor: "#A855F7",
+            iconBg: colors.proSoft,
+            iconColor: colors.pro,
             title: "Sound Effects",
             subtitle: "Audio cues on completion",
             value: soundEnabled,
@@ -277,20 +223,8 @@ function SettingsContent() {
           })}
         </Animated.View>
 
-        {/* Support & Legal */}
-        <Animated.View
-          entering={FadeInDown.delay(200).duration(350)}
-          style={styles.section}
-        >
-          <Text
-            style={[
-              styles.sectionHeader,
-              {
-                color: colors.textMuted || "#A1A1AA",
-                fontFamily: fonts.headingBold || "Sora_700Bold",
-              },
-            ]}
-          >
+        <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.section}>
+          <Text style={[styles.sectionHeader, { color: colors.textMuted, fontFamily: fonts.headingBold }]}>
             SUPPORT & MORE
           </Text>
           {renderSettingItem({
@@ -303,50 +237,30 @@ function SettingsContent() {
           })}
           {renderSettingItem({
             icon: "document-text-outline",
-            iconBg: "rgba(107, 114, 128, 0.15)",
-            iconColor: "#9CA3AF",
+            iconBg: colors.divider,
+            iconColor: colors.textMuted,
             title: "Privacy Policy",
             subtitle: "Data privacy and terms",
             onPress: () => router.push("/privacy-policy"),
           })}
         </Animated.View>
 
-        {/* Sign Out */}
-        <Animated.View
-          entering={FadeInDown.delay(300).duration(350)}
-          style={styles.section}
-        >
+        <Animated.View entering={FadeInDown.delay(300).duration(350)} style={styles.section}>
           {renderSettingItem({
             icon: "log-out-outline",
             iconBg: "rgba(239, 68, 68, 0.15)",
-            iconColor: "#EF4444",
+            iconColor: colors.danger,
             title: "Log Out",
             isDestructive: true,
             onPress: handleSignOut,
           })}
         </Animated.View>
 
-        <Text
-          style={[
-            styles.versionText,
-            {
-              color: colors.textMuted || "#71717A",
-              fontFamily: fonts.body || "Inter_400Regular",
-            },
-          ]}
-        >
+        <Text style={[styles.versionText, { color: colors.textMuted, fontFamily: fonts.body }]}>
           Beyownd App v1.0.0
         </Text>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-export default function SettingsScreen() {
-  return (
-    <HomeThemeProvider>
-      <SettingsContent />
-    </HomeThemeProvider>
   );
 }
 
@@ -370,12 +284,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
   section: { gap: 10 },
-  sectionHeader: {
-    fontSize: 11,
-    letterSpacing: 1,
-    marginLeft: 4,
-    marginBottom: 2,
-  },
+  sectionHeader: { fontSize: 11, letterSpacing: 1, marginLeft: 4, marginBottom: 2 },
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -384,25 +293,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  itemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  iconWrapper: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   textGroup: { flex: 1, gap: 2 },
   itemTitle: { fontSize: 14 },
   itemSubtitle: { fontSize: 11, lineHeight: 15 },
-  versionText: {
-    textAlign: "center",
-    fontSize: 12,
-    marginTop: 12,
-  },
+  versionText: { textAlign: "center", fontSize: 12, marginTop: 12 },
 });

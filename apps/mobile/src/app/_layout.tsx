@@ -6,10 +6,26 @@ import { useFonts as useInter, Inter_400Regular, Inter_500Medium } from '@expo-g
 
 import OfflineBanner from '@/components/common/OfflineBanner';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { ThemeProvider, useHomeTheme } from '@/context/ThemeContext';
 import { useAuthStore } from '@/store/useAuthStore';
 
 SplashScreen.preventAutoHideAsync();
+
+function AppNavigator() {
+  const { colors } = useHomeTheme();
+
+  return (
+    <>
+      <OfflineBanner />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const [soraLoaded] = useSora({ Sora_600SemiBold, Sora_700Bold });
@@ -43,13 +59,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <OfflineBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#09090B' },
-          }}
-        />
+        <AppNavigator />
       </ThemeProvider>
     </ErrorBoundary>
   );
